@@ -55,13 +55,13 @@ const items = [
   },
   {
     title: "Fix Image",
-    icon: Sparkles,
+    icon: Wrench,
     description:
       "Enhance images by adjusting lighting, fixing shadows, and removing unnecessary background items for a clean look.",
   },
   {
     title: "Playground",
-    icon: Wrench,
+    icon: Sparkles,
     description:
       "Experiment with text-to-image AI models that can generate images based on any creative prompt.",
   },

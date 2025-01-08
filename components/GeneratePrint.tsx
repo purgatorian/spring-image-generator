@@ -125,7 +125,7 @@ export const GeneratePrint = () => {
     setProgress(0); // Reset progress bar
     setBatchSkeletons(Array.from({ length: parameters.batchSize })); // Set skeleton count
     let payload;
-
+  
     if (mode === "text") {
       payload = {
         mode: "text",
@@ -136,26 +136,32 @@ export const GeneratePrint = () => {
           document.querySelector(
             "textarea[placeholder='Negative prompts (optional)...']"
           ).value || null,
-        parameters,
+        parameters: {
+          ...parameters,
+          tiling: parameters.tiling ? "enable" : "disable", // Send 'enable' or 'disable'
+        },
       };
     } else if (mode === "image") {
       payload = {
         mode: "image",
         uploadedImages: uploadedImages.map((img) => img.preview),
         uploadedImageUrl: uploadedImageUrl || null,
-        parameters,
+        parameters: {
+          ...parameters,
+          tiling: parameters.tiling ? "enable" : "disable", // Send 'enable' or 'disable'
+        },
       };
     }
-
+  
     try {
       const response = await fetch("/api/generate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
       });
-
+  
       if (!response.ok) throw new Error("Failed to queue generation");
-
+  
       const { runId } = await response.json();
       setRunId(runId); // Store the run ID for webhook updates
       setStatus("queued");
@@ -163,7 +169,7 @@ export const GeneratePrint = () => {
       console.error("Error:", error);
       setStatus("Error while queuing generation");
     }
-  };
+  };  
 
   useEffect(() => {
     if (!runId) return;
@@ -376,14 +382,15 @@ export const GeneratePrint = () => {
                       className="w-full"
                     />
                   </div>
-                  <div className="flex items-center justify-between">
+                  <div className="flex items-center justify-items-start gap-2">
+                  <label>Enable Tiling</label>
+
                     <Checkbox
                       checked={parameters.tiling}
                       onCheckedChange={(checked) =>
                         setParameters((prev) => ({ ...prev, tiling: checked }))
                       }
                     />
-                    <label>Enable Tiling</label>
                   </div>
                 </div>
               </PopoverContent>

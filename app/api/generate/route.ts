@@ -40,7 +40,7 @@ export async function POST(request: Request) {
         Authorization: `Bearer ${process.env.COMFY_DEPLOY_API_KEY}`,
       },
       body: JSON.stringify({
-        deployment_id: "897e8d16-b4d1-4832-a76d-e69edf80e4e8",
+        deployment_id: "39c0c452-a121-47c4-b596-881f6264e116",
         webhook: `${process.env.NEXT_PUBLIC_BASE_URL}/api/webhook`, // Optional webhook for status updates
         inputs,
       }),
