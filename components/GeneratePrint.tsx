@@ -172,7 +172,6 @@ export const GeneratePrint = () => {
       console.error("Error:", error);
       setStatus("Error while queuing generation");
     } finally {
-      setIsGenerating(false); // Re-enable button after completion
     }
   };
 
@@ -181,6 +180,7 @@ export const GeneratePrint = () => {
     "https://api.instasd.com/api_endpoints/ma5o39at1e9gnd",
     (progress) => setProgress(progress),
     (imageUrls) => {
+      setIsGenerating(false); // Re-enable button after completion
       setGeneratedImages(imageUrls); // Save the image URLs
       setStatus("Completed");
     },
