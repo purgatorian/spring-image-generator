@@ -52,8 +52,6 @@ const ZoomModal: React.FC<ZoomModalProps> = ({ images, currentIndex, onClose }) 
       console.error("Error downloading image:", error);
     }
   };
-  
-
 
   const handleNext = () => {
     setActiveIndex((prevIndex) => (prevIndex + 1) % images.length);

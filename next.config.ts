@@ -1,12 +1,16 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  /* config options here */
-  
-};
-module.exports = {
   images: {
-    domains: ["comfy-deploy-output.s3.us-east-2.amazonaws.com"],
+    remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: 'd39mujgedhhp01.cloudfront.net',  // Added specific subdomain
+        pathname: '**',
+      },
+    ],
   },
 };
+
+module.exports = nextConfig;
 export default nextConfig;

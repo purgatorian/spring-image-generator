@@ -13,6 +13,9 @@ import { Check, ChevronsUpDown } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Progress } from "@/components/ui/progress";
 import ZoomModal from "@/components/ZoomModal";
+import { buildTextModePayload } from "@/app/api/generate/route";
+import { useTaskStatus } from "@/app/api/hooks/useTaskStatus";
+
 import {
   Select,
   SelectTrigger,
@@ -64,7 +67,7 @@ const ImageRenderer = ({ image, onRemove }) => (
       className="object-cover rounded"
     />
     <button
-      onClick={onRemove}
+      onClick={onRemove} // This is where onRemove is used
       className="absolute top-2 right-2 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition"
     >
       <X size={20} />
@@ -75,7 +78,7 @@ const ImageRenderer = ({ image, onRemove }) => (
 export const GeneratePrint = () => {
   const [batchSkeletons, setBatchSkeletons] = useState([]);
   const [mode, setMode] = useState("text");
-  const [uploadedImages, setUploadedImages] = useState([]);
+  const [uploadedImage, setUploadedImage] = useState(null);
   const [uploadedImageUrl, setUploadedImageUrl] = useState("");
   const [open, setOpen] = React.useState(false);
   const [value, setValue] = React.useState("");
@@ -83,8 +86,8 @@ export const GeneratePrint = () => {
     resolution: "1024x1024",
     batchSize: 1,
     denoise: 1,
-    tiling: false,
-    resolutionLocked: false,
+    tiling: true,
+    resolutionLocked: true,
   });
   const [generatedImages, setGeneratedImages] = useState([]);
   const [status, setStatus] = useState("Waiting for generation...");
@@ -93,124 +96,97 @@ export const GeneratePrint = () => {
   const [popoverOpen, setPopoverOpen] = useState(false);
   const [zoomModalOpen, setZoomModalOpen] = useState(false);
   const [activeImageIndex, setActiveImageIndex] = useState(0); // Default to the first image
+  const [isGenerating, setIsGenerating] = useState(false);
 
   const handleDrop = (acceptedFiles) => {
-    const filePreviews = acceptedFiles.map((file) =>
-      Object.assign(file, { preview: URL.createObjectURL(file) })
-    );
-    setUploadedImages([...uploadedImages, ...filePreviews]);
+    const file = acceptedFiles[0];
+    if (file) {
+      setUploadedImage(
+        Object.assign(file, { preview: URL.createObjectURL(file) })
+      );
+    }
   };
 
   const handleAddUrlImage = () => {
     if (uploadedImageUrl) {
-      setUploadedImages([...uploadedImages, { preview: uploadedImageUrl }]);
+      setUploadedImage({ preview: uploadedImageUrl });
       setUploadedImageUrl("");
     }
-  };
-
-  const handleRemoveImage = (index) => {
-    const updatedImages = [...uploadedImages];
-    updatedImages.splice(index, 1);
-    setUploadedImages(updatedImages);
   };
 
   const { getRootProps, getInputProps } = useDropzone({
     onDrop: handleDrop,
     accept: { "image/jpeg": [], "image/png": [] },
-    multiple: true,
+    multiple: false,
   });
 
   const handleGenerate = async () => {
-    setGeneratedImages([]); // Clear generated images
-    setProgress(0); // Reset progress bar
-    setBatchSkeletons(Array.from({ length: parameters.batchSize })); // Set skeleton count
+    setIsGenerating(true); // Disable button and show spinner
+    setGeneratedImages([]);
+    setProgress(0);
+    setBatchSkeletons(Array.from({ length: parameters.batchSize }));
+
     let payload;
-  
+
     if (mode === "text") {
       payload = {
-        mode: "text",
-        textPrompt: document.querySelector(
-          "textarea[placeholder='Describe in detail what the print should look like...']"
-        ).value,
-        negativePrompt:
-          document.querySelector(
-            "textarea[placeholder='Negative prompts (optional)...']"
-          ).value || null,
-        parameters: {
-          ...parameters,
-          tiling: parameters.tiling ? "enable" : "disable", // Send 'enable' or 'disable'
+        apiEndpoint: "https://api.instasd.com/api_endpoints/ma5o39at1e9gnd",
+        payload: {
+          ...buildTextModePayload(
+            document.querySelector(
+              "textarea[placeholder='Describe in detail what the print should look like...']"
+            ).value,
+            document.querySelector(
+              "textarea[placeholder='Negative prompts (optional)...']"
+            ).value || "",
+            parameters
+          ),
         },
       };
-    } else if (mode === "image") {
+    } else if (mode === "image" && uploadedImage) {
       payload = {
-        mode: "image",
-        uploadedImages: uploadedImages.map((img) => img.preview),
-        uploadedImageUrl: uploadedImageUrl || null,
-        parameters: {
+        apiEndpoint:
+          "https://api.instasd.com/api_endpoints/your_image_endpoint",
+        payload: {
+          mode: "image",
+          uploadedImage: uploadedImage.preview,
           ...parameters,
-          tiling: parameters.tiling ? "enable" : "disable", // Send 'enable' or 'disable'
+          tiling: parameters.tiling ? "enable" : "disable",
         },
       };
     }
-  
+
     try {
       const response = await fetch("/api/generate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
       });
-  
+
       if (!response.ok) throw new Error("Failed to queue generation");
-  
-      const { runId } = await response.json();
-      setRunId(runId); // Store the run ID for webhook updates
+
+      const { task_id } = await response.json();
+      setRunId(task_id); // This triggers useTaskStatus
       setStatus("queued");
     } catch (error) {
       console.error("Error:", error);
       setStatus("Error while queuing generation");
+    } finally {
+      setIsGenerating(false); // Re-enable button after completion
     }
-  };  
+  };
 
-  useEffect(() => {
-    if (!runId) return;
-    const eventSource = new EventSource(`/api/webhook?runId=${runId}`);
+  useTaskStatus(
+    runId,
+    "https://api.instasd.com/api_endpoints/ma5o39at1e9gnd",
+    (progress) => setProgress(progress),
+    (imageUrls) => {
+      setGeneratedImages(imageUrls); // Save the image URLs
+      setStatus("Completed");
+    },
 
-    eventSource.onmessage = (event) => {
-      const { status, outputs } = JSON.parse(event.data);
-      setStatus(status);
-
-      switch (status) {
-        case "queued":
-          setProgress(10);
-          break;
-        case "started":
-          setProgress(20);
-          break;
-        case "running":
-          setProgress(60);
-          break;
-        case "uploading":
-          setProgress(80);
-          break;
-        case "success":
-          setProgress(100);
-          if (outputs) {
-            setGeneratedImages(outputs.flatMap((output) => output.data.images || []));
-          }
-          eventSource.close();
-          break;
-        default:
-          break;
-      }
-    };
-
-    eventSource.onerror = () => {
-      setStatus("Error receiving updates.");
-      eventSource.close();
-    };
-
-    return () => eventSource.close();
-  }, [runId]);
+    (error) => setStatus(error)
+  );
 
   return (
     <div className="flex flex-col lg:flex-row gap-6 p-4 md:p-8">
@@ -269,13 +245,12 @@ export const GeneratePrint = () => {
 
               {/* Image Gallery */}
               <div className="flex overflow-x-auto gap-4">
-                {uploadedImages.map((image, index) => (
+                {uploadedImage && (
                   <ImageRenderer
-                    key={index}
-                    image={image}
-                    onRemove={() => handleRemoveImage(index)}
+                    image={uploadedImage}
+                    onRemove={() => setUploadedImage(null)} // This allows the user to remove the image
                   />
-                ))}
+                )}
               </div>
             </div>
           )}
@@ -383,7 +358,7 @@ export const GeneratePrint = () => {
                     />
                   </div>
                   <div className="flex items-center justify-items-start gap-2">
-                  <label>Enable Tiling</label>
+                    <label>Enable Tiling</label>
 
                     <Checkbox
                       checked={parameters.tiling}
@@ -395,9 +370,36 @@ export const GeneratePrint = () => {
                 </div>
               </PopoverContent>
             </Popover>
-            <Button onClick={handleGenerate} className="h-12 w-full md:w-auto">
-              Generate
-            </Button>
+            <Button
+  onClick={handleGenerate}
+  className="h-12 w-full md:w-auto flex items-center justify-center"
+  disabled={isGenerating} // Disable while loading
+>
+  {isGenerating ? (
+    <svg
+      className="animate-spin h-5 w-5 text-white"
+      xmlns="http://www.w3.org/2000/svg"
+      fill="none"
+      viewBox="0 0 24 24"
+    >
+      <circle
+        className="opacity-25"
+        cx="12"
+        cy="12"
+        r="10"
+        stroke="currentColor"
+        strokeWidth="4"
+      />
+      <path
+        className="opacity-75"
+        fill="currentColor"
+        d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"
+      />
+    </svg>
+  ) : (
+    "Generate"
+  )}
+</Button>
           </div>
         </CardContent>
       </Card>
@@ -407,16 +409,27 @@ export const GeneratePrint = () => {
       <Card className="w-full lg:w-1/4 p-4 space-y-4">
         <CardHeader>
           <CardTitle className="text-lg md:text-xl">Generated Images</CardTitle>
-          {runId && <Progress value={progress} className="w-full mt-2" />}
+
+          {runId && (
+            <div className="w-full mt-2">
+              <p className="text-sm text-gray-600 mb-1">{status}</p>{" "}
+              {/* Status above progress bar */}
+              <Progress value={progress} className="w-full" />
+              <p className="text-sm text-gray-600 text-right mt-1">
+                {progress.toFixed(0)}%
+              </p>{" "}
+              {/* % below progress bar */}
+            </div>
+          )}
         </CardHeader>
         <CardContent className="flex flex-wrap gap-4 justify-center">
-          {runId && generatedImages.length === 0 && batchSkeletons.map((_, index) => (
-            <Skeleton
-              key={index}
-              className="w-32 h-32 rounded"
-            />
-          ))}
-          {generatedImages.map((image, index) => (
+          {runId &&
+            generatedImages.length === 0 &&
+            batchSkeletons.map((_, index) => (
+              <Skeleton key={index} className="w-32 h-32 rounded" />
+            ))}
+
+          {generatedImages.map((imageUrl, index) => (
             <div
               key={index}
               className="relative cursor-pointer"
@@ -424,17 +437,13 @@ export const GeneratePrint = () => {
                 setZoomModalOpen(true);
                 setActiveImageIndex(index);
               }}
-              style={{
-                width: "100%",
-                maxWidth: "200px",
-                aspectRatio: "1 / 1",
-              }}
+              style={{ width: "100%", maxWidth: "200px", aspectRatio: "1 / 1" }}
             >
               <Image
-                src={image.url}
+                src={imageUrl} // Using the image URL directly
                 alt={`Generated Image ${index + 1}`}
-                fill
-                sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                width={200}
+                height={200}
                 className="rounded object-contain"
               />
             </div>
@@ -445,7 +454,7 @@ export const GeneratePrint = () => {
       {/* ZoomModal */}
       {zoomModalOpen && (
         <ZoomModal
-          images={generatedImages}
+          images={generatedImages.map((url) => ({ url }))} // Wrap URLs in objects
           currentIndex={activeImageIndex}
           onClose={() => setZoomModalOpen(false)}
         />
