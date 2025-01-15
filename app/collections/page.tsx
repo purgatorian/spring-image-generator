@@ -7,7 +7,7 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Input } from "@/components/ui/input";
-import { MoreHorizontal, Edit, Trash2, Plus, Check } from "lucide-react";
+import { MoreHorizontal, Trash2, Plus, Check } from "lucide-react";
 
 interface Collection {
   id: string;
