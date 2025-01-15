@@ -1,6 +1,7 @@
+//app/components/GeneratePrint.tsx
 "use client";
 import * as React from "react";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useDropzone } from "react-dropzone";
 import Image from "next/image";
 import { Switch } from "@/components/ui/switch";
@@ -9,54 +10,24 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Check, ChevronsUpDown } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Progress } from "@/components/ui/progress";
 import ZoomModal from "@/components/ZoomModal";
 import { buildTextModePayload } from "@/lib/payloadBuilder";
 import { useTaskStatus } from "@/app/api/hooks/useTaskStatus";
-
-import {
-  Select,
-  SelectTrigger,
-  SelectContent,
-  SelectItem,
-} from "@/components/ui/select";
-import { Lock, LockOpen, Download, Share, Heart, X } from "lucide-react";
+import { Lock, LockOpen,X } from "lucide-react";
 import {
   Card,
   CardContent,
   CardDescription,
-  CardFooter,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import {
-  Command,
-  CommandEmpty,
-  CommandGroup,
-  CommandInput,
-  CommandItem,
-  CommandList,
-} from "@/components/ui/command";
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import {
-  Accordion,
-  AccordionItem,
-  AccordionTrigger,
-  AccordionContent,
-} from "@/components/ui/accordion";
-const models = [
-  { value: "1", label: "Dream Deliberate" },
-  { value: "2", label: "Dream Shaper" },
-  { value: "3", label: "SDXL" },
-  { value: "4", label: "SDXL ST" },
-  { value: "5", label: "SDXL Turbo" },
-];
 
 const ImageRenderer = ({ image, onRemove }) => (
   <div className="relative group w-64 h-64">
@@ -80,8 +51,6 @@ export const GeneratePrint = () => {
   const [mode, setMode] = useState("text");
   const [uploadedImage, setUploadedImage] = useState(null);
   const [uploadedImageUrl, setUploadedImageUrl] = useState("");
-  const [open, setOpen] = React.useState(false);
-  const [value, setValue] = React.useState("");
   const [parameters, setParameters] = useState({
     resolution: "1024x1024",
     batchSize: 1,

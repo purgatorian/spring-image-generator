@@ -21,7 +21,7 @@ const SharePopover: React.FC<SharePopoverProps> = ({ imageUrl }) => {
         description: "The image link has been copied to your clipboard.",
         variant: "default",
       });
-    } catch (error) {
+    } catch {
       toast({
         title: "Error!",
         description: "Failed to copy the link.",
