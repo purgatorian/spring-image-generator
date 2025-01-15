@@ -1,4 +1,3 @@
-// components/CollectionPopover.tsx
 import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -18,7 +17,7 @@ interface CollectionPopoverProps {
 interface Collection {
   id: string;
   name: string;
-  images: string[];
+  images: { id: string; url: string }[];  // ✅ Updated to match relational model
 }
 
 const CollectionPopover: React.FC<CollectionPopoverProps> = ({ imageUrl }) => {
@@ -27,6 +26,7 @@ const CollectionPopover: React.FC<CollectionPopoverProps> = ({ imageUrl }) => {
   const [collections, setCollections] = useState<Collection[]>([]);
   const [selectedCollections, setSelectedCollections] = useState<string[]>([]);
   const { toast } = useToast();
+
   // ✅ Success Toast
   const showSuccessToast = (message: string) => {
     toast({
@@ -44,76 +44,84 @@ const CollectionPopover: React.FC<CollectionPopoverProps> = ({ imageUrl }) => {
       variant: "destructive",
     });
   };
+
+  // ✅ Fetch collections from the API
   const fetchCollections = async () => {
     try {
       const response = await fetch("/api/collections");
       const data = await response.json();
       setCollections(Array.isArray(data) ? data : []);
+
+      // ✅ Check if the image already exists in any collection
       const existingCollections = data.filter((col: Collection) =>
-        col.images.includes(imageUrl)
+        col.images.some((img) => img.url === imageUrl)
       );
-      setSelectedCollections(
-        existingCollections.map((col: Collection) => col.id)
-      );
+      setSelectedCollections(existingCollections.map((col) => col.id));
     } catch (error) {
       console.error("Error fetching collections:", error);
+      showErrorToast("Failed to fetch collections.");
     }
   };
 
   useEffect(() => {
-    fetchCollections();
-  }, [fetchCollections, imageUrl]);
+    if (popoverOpen) {
+      fetchCollections();
+    }
+  }, [popoverOpen, imageUrl]);
 
-  const handleCollectionSelect = async (id: string, checked: boolean) => {
+  // ✅ Handle image addition or removal from a collection
+  const handleCollectionSelect = async (collectionId: string, checked: boolean) => {
     try {
       const url = checked
-        ? "/api/collections"
-        : `/api/collections/${id}/remove-image`;
+        ? `/api/collections/${collectionId}/add-image`
+        : `/api/collections/${collectionId}/remove-image`;
       const method = checked ? "POST" : "DELETE";
+
       const response = await fetch(url, {
         method,
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ collectionId: id, imageUrl }),
+        body: JSON.stringify({ imageUrl }),
       });
+
       if (response.ok) {
         setSelectedCollections((prev) =>
-          checked ? [...prev, id] : prev.filter((col) => col !== id)
+          checked ? [...prev, collectionId] : prev.filter((id) => id !== collectionId)
         );
-        toast({
-          title: "Success!",
-          description: checked
-            ? "Image added to the collection."
-            : "Image removed.",
-          variant: "default",
-        });
+        showSuccessToast(
+          checked ? "Image added to the collection." : "Image removed from the collection."
+        );
+      } else {
+        showErrorToast("Failed to update the collection.");
       }
     } catch (error) {
       console.error("Error updating collection:", error);
+      showErrorToast("An error occurred while updating the collection.");
     }
   };
 
+  // ✅ Handle new collection creation
   const handleCreateCollection = async () => {
     if (!collectionName.trim()) return;
-  
+
     try {
       const response = await fetch("/api/collections", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ name: collectionName, imageUrl }),
       });
-  
+
       if (response.ok) {
         setCollectionName("");
-        await fetchCollections();  // ✅ Fetch updated collections
+        await fetchCollections();  // ✅ Refresh the collections list
         showSuccessToast("New collection created and image added.");
       } else {
         showErrorToast("Failed to create the collection.");
       }
     } catch (error) {
+      console.error("Error creating collection:", error);
       showErrorToast("An error occurred while creating the collection.");
     }
   };
-  
 
   return (
     <Popover open={popoverOpen} onOpenChange={setPopoverOpen}>
@@ -132,7 +140,7 @@ const CollectionPopover: React.FC<CollectionPopoverProps> = ({ imageUrl }) => {
         </Button>
       </PopoverTrigger>
       <PopoverContent>
-        <div className="flex items-center space-x-2">
+        <div className="flex items-center space-x-2 mb-2">
           <Input
             placeholder="New Collection"
             value={collectionName}
@@ -142,19 +150,21 @@ const CollectionPopover: React.FC<CollectionPopoverProps> = ({ imageUrl }) => {
             <Save />
           </Button>
         </div>
-        {collections.map((col) => (
-  <div
-    key={`${col.id}-${col.name}`}  // ✅ Unique key combining id and name
-    className="flex items-center space-x-2 my-1"
-  >
-    <Checkbox
-      checked={selectedCollections.includes(col.id)}
-      onCheckedChange={(checked) => handleCollectionSelect(col.id, checked)}
-    />
-    <span>{col.name}</span>
-  </div>
-))}
 
+        {collections.map((col) => (
+          <div
+            key={col.id}
+            className="flex items-center space-x-2 my-1"
+          >
+            <Checkbox
+              checked={selectedCollections.includes(col.id)}
+              onCheckedChange={(checked) =>
+                handleCollectionSelect(col.id, checked as boolean)
+              }
+            />
+            <span>{col.name}</span>
+          </div>
+        ))}
       </PopoverContent>
     </Popover>
   );

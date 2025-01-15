@@ -1,21 +1,14 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import {
-  Popover,
-  PopoverTrigger,
   PopoverContent,
 } from "@/components/ui/popover";
 import {
   X,
-  Download,
-  Heart,
-  Share,
   ChevronLeft,
   ChevronRight,
   Grid,
-  Save,
 } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
