@@ -62,7 +62,7 @@ const CollectionPopover: React.FC<CollectionPopoverProps> = ({ imageUrl }) => {
 
   useEffect(() => {
     fetchCollections();
-  }, [imageUrl]);
+  }, [fetchCollections, imageUrl]);
 
   const handleCollectionSelect = async (id: string, checked: boolean) => {
     try {

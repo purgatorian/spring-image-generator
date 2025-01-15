@@ -1,3 +1,4 @@
+//app/api/generate/route.ts
 "use server"
 import { NextRequest, NextResponse } from 'next/server';
 import axios from 'axios';
@@ -31,9 +32,17 @@ export async function POST(req: NextRequest) {
       });
 
       task_id = response.data.task_id;
-    } catch (apiError: any) {
-      console.error("❌ Error in API call to InstaSD:", apiError.response?.data || apiError.message);
-      return NextResponse.json({ error: 'Failed API call to InstaSD', details: apiError.response?.data || apiError.message }, { status: 500 });
+    } catch (apiError: unknown) {
+      if (axios.isAxiosError(apiError)) {
+        console.error("❌ Error in API call to InstaSD:", apiError.response?.data || apiError.message);
+        return NextResponse.json({ 
+          error: 'Failed API call to InstaSD', 
+          details: apiError.response?.data || apiError.message 
+        }, { status: 500 });
+      } else {
+        console.error("❌ Unknown error:", apiError);
+        return NextResponse.json({ error: 'Unknown error occurred' }, { status: 500 });
+      }
     }
 
     // 🟢 Step 2: Test Database Write
@@ -46,15 +55,31 @@ export async function POST(req: NextRequest) {
           cost: 0,
         },
       });
-    } catch (dbError: any) {
-      console.error("❌ Error writing to the database:", dbError.message);
-      return NextResponse.json({ error: 'Failed to write to the database', details: dbError.message }, { status: 500 });
+    } catch (dbError: unknown) {
+      if (dbError instanceof Error) {
+        console.error("❌ Error writing to the database:", dbError.message);
+        return NextResponse.json({ 
+          error: 'Failed to write to the database', 
+          details: dbError.message 
+        }, { status: 500 });
+      } else {
+        console.error("❌ Unknown database error:", dbError);
+        return NextResponse.json({ error: 'Unknown database error' }, { status: 500 });
+      }
     }
 
     return NextResponse.json({ task_id, status: 'CREATED' });
-  } catch (error: any) {
-    console.error('❌ General error:', error.message);
-    return NextResponse.json({ error: 'Failed to start task', details: error.message }, { status: 500 });
+  } catch (error: unknown) {
+    if (error instanceof Error) {
+      console.error('❌ General error:', error.message);
+      return NextResponse.json({ 
+        error: 'Failed to start task', 
+        details: error.message 
+      }, { status: 500 });
+    } else {
+      console.error('❌ Unknown error:', error);
+      return NextResponse.json({ error: 'Unknown error occurred' }, { status: 500 });
+    }
   }
 }
 
