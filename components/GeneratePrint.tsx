@@ -13,7 +13,7 @@ import { Check, ChevronsUpDown } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Progress } from "@/components/ui/progress";
 import ZoomModal from "@/components/ZoomModal";
-import { buildTextModePayload } from "@/app/api/generate/route";
+import { buildTextModePayload } from "@/lib/payloadBuilder";
 import { useTaskStatus } from "@/app/api/hooks/useTaskStatus";
 
 import {
@@ -97,6 +97,8 @@ export const GeneratePrint = () => {
   const [zoomModalOpen, setZoomModalOpen] = useState(false);
   const [activeImageIndex, setActiveImageIndex] = useState(0); // Default to the first image
   const [isGenerating, setIsGenerating] = useState(false);
+  const [prompt, setPrompt] = useState("");
+  const [negativePrompt, setNegativePrompt] = useState("");
 
   const handleDrop = (acceptedFiles) => {
     const file = acceptedFiles[0];
@@ -120,60 +122,89 @@ export const GeneratePrint = () => {
     multiple: false,
   });
 
+  // Function to upload image to Picallow
+  const uploadToPicallow = async (file) => {
+    const formData = new FormData();
+    formData.append("file", file);
+
+    try {
+      const response = await fetch("https://api.picallow.com/upload", {
+        method: "POST",
+        body: formData,
+      });
+
+      const data = await response.json();
+      if (response.ok && data.status === "success") {
+        return data.url; // Return the uploaded image URL
+      } else {
+        throw new Error("Image upload failed");
+      }
+    } catch (error) {
+      console.error("Picallow upload error:", error);
+      return null;
+    }
+  };
+
+  // Modified handleGenerate function to use Picallow
   const handleGenerate = async () => {
-    setIsGenerating(true); // Disable button and show spinner
+    setIsGenerating(true);
     setGeneratedImages([]);
     setProgress(0);
     setBatchSkeletons(Array.from({ length: parameters.batchSize }));
-
+  
     let payload;
-
+  
     if (mode === "text") {
+      // ✅ Build the payload and log it
+      const builtPayload = buildTextModePayload(prompt.trim(), negativePrompt.trim(), parameters);  
       payload = {
         apiEndpoint: "https://api.instasd.com/api_endpoints/ma5o39at1e9gnd",
-        payload: {
-          ...buildTextModePayload(
-            document.querySelector(
-              "textarea[placeholder='Describe in detail what the print should look like...']"
-            ).value,
-            document.querySelector(
-              "textarea[placeholder='Negative prompts (optional)...']"
-            ).value || "",
-            parameters
-          ),
-        },
+        payload: builtPayload,
       };
     } else if (mode === "image" && uploadedImage) {
+      const picallowUrl = await uploadToPicallow(uploadedImage);
+      if (!picallowUrl) {
+        setStatus("Failed to upload image");
+        setIsGenerating(false);
+        return;
+      }
+  
       payload = {
-        apiEndpoint:
-          "https://api.instasd.com/api_endpoints/your_image_endpoint",
+        apiEndpoint: "https://api.instasd.com/api_endpoints/your_image_endpoint",
         payload: {
           mode: "image",
-          uploadedImage: uploadedImage.preview,
+          uploadedImage: picallowUrl,
           ...parameters,
           tiling: parameters.tiling ? "enable" : "disable",
         },
       };
     }
-
+  
     try {
       const response = await fetch("/api/generate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
       });
-
-      if (!response.ok) throw new Error("Failed to queue generation");
-
+  
+      if (!response.ok) {
+        const errorDetails = await response.json();
+        console.error("❌ Detailed Error Response:", errorDetails);
+        throw new Error(`Failed to queue generation: ${errorDetails.error || response.statusText}`);
+      }
+  
       const { task_id } = await response.json();
-      setRunId(task_id); // This triggers useTaskStatus
-      setStatus("queued");
+      setRunId(task_id);
+      setStatus("Queued");
     } catch (error) {
-      console.error("Error:", error);
-      setStatus("Error while queuing generation");
+      console.error("❌ Error in handleGenerate:", error);
+      setStatus(`Error while queuing generation: ${error.message}`);
     } finally {
+      setIsGenerating(false);
     }
   };
+  
+  
 
   useTaskStatus(
     runId,
@@ -216,11 +247,16 @@ export const GeneratePrint = () => {
                 placeholder="Describe in detail what the print should look like..."
                 rows={4}
                 className="w-full"
+                value={prompt}
+                onChange={(e) => setPrompt(e.target.value)}
               />
+
               <Textarea
                 placeholder="Negative prompts (optional)..."
                 rows={3}
                 className="w-full"
+                value={negativePrompt}
+                onChange={(e) => setNegativePrompt(e.target.value)}
               />
             </div>
           ) : (
@@ -371,35 +407,35 @@ export const GeneratePrint = () => {
               </PopoverContent>
             </Popover>
             <Button
-  onClick={handleGenerate}
-  className="h-12 w-full md:w-auto flex items-center justify-center"
-  disabled={isGenerating} // Disable while loading
->
-  {isGenerating ? (
-    <svg
-      className="animate-spin h-5 w-5 text-white"
-      xmlns="http://www.w3.org/2000/svg"
-      fill="none"
-      viewBox="0 0 24 24"
-    >
-      <circle
-        className="opacity-25"
-        cx="12"
-        cy="12"
-        r="10"
-        stroke="currentColor"
-        strokeWidth="4"
-      />
-      <path
-        className="opacity-75"
-        fill="currentColor"
-        d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"
-      />
-    </svg>
-  ) : (
-    "Generate"
-  )}
-</Button>
+              onClick={handleGenerate}
+              className="h-12 w-full md:w-auto flex items-center justify-center"
+              disabled={isGenerating} // Disable while loading
+            >
+              {isGenerating ? (
+                <svg
+                  className="animate-spin h-5 w-5 text-white"
+                  xmlns="http://www.w3.org/2000/svg"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                >
+                  <circle
+                    className="opacity-25"
+                    cx="12"
+                    cy="12"
+                    r="10"
+                    stroke="currentColor"
+                    strokeWidth="4"
+                  />
+                  <path
+                    className="opacity-75"
+                    fill="currentColor"
+                    d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"
+                  />
+                </svg>
+              ) : (
+                "Generate"
+              )}
+            </Button>
           </div>
         </CardContent>
       </Card>

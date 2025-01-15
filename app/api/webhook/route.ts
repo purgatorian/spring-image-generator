@@ -8,12 +8,8 @@ export async function POST(request: Request) {
   const data = await cd.validateWebhook({ request });
 
   const { status, runId, outputs, liveStatus, progress } = data;
-  console.log("Webhook data:", data);
   // Update in-memory status
   runStatus.set(runId, { status, outputs });
-
-  // Log the progress (for debugging)
-  console.log(`RunID: ${runId}, Status: ${status}, Outputs:`, outputs);
 
   // Return success to ComfyDeploy
   return NextResponse.json({ message: "success" }, { status: 200 });

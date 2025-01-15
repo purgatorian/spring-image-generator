@@ -1,0 +1,35 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model User {
+  id        String    @id @default(uuid())
+  email     String    @unique
+  createdAt DateTime  @default(now())
+  requests  Request[]
+}
+
+model Request {
+  id          String   @id @default(uuid())
+  user        User     @relation(fields: [userId], references: [id])
+  userId      String
+  taskId      String   @unique
+  status      String
+  imageUrls   String   @default("[]") // Store as JSON string
+  videoUrls   String   @default("[]") // Store as JSON string
+  cost        Float
+  createdAt   DateTime @default(now())
+}
+
+model Collection {
+  id        String   @id @default(uuid())
+  userId    String
+  name      String
+  images    String[] // Array of image URLs
+  createdAt DateTime @default(now())
+}

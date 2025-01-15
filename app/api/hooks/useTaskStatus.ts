@@ -1,41 +1,44 @@
 import { useEffect } from "react";
 
-export const useTaskStatus = (
-  taskId: string | null,
-  apiEndpoint: string,
-  onProgressUpdate: (progress: number) => void,
-  onComplete: (images: string[]) => void,
-  onError: (error: string) => void
-) => {
+export const useTaskStatus = (taskId, apiEndpoint, onProgressUpdate, onComplete, onError) => {
   useEffect(() => {
     if (!taskId) return;
 
     const interval = setInterval(async () => {
       try {
-        const response = await fetch(`/api/generate?apiEndpoint=${apiEndpoint}&task_id=${taskId}`);
+        const response = await fetch(`${apiEndpoint}/task_status/${taskId}`, {
+          method: "GET",
+          headers: {
+            Authorization: `Bearer ${process.env.NEXT_PUBLIC_INSTASD_AUTH_TOKEN}`,
+          },
+        });
+
         const data = await response.json();
-        console.log(data);
-
-        if (data.error) throw new Error(data.error);
-
-        // Corrected task status and progress calculation
-        const progress = data.status === "COMPLETED"
-          ? 100
-          : (data.completed_steps / data.estimated_steps) * 100;
-
-        onProgressUpdate(progress);
 
         if (data.status === "COMPLETED") {
+          onProgressUpdate(100);
           onComplete(data.image_urls);
+
+          // ✅ Call the new API route to update the DB
+          await fetch("/api/update-task", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              taskId,
+              status: data.status,
+              imageUrls: data.image_urls,
+              cost: data.cost,
+            }),
+          });
+
           clearInterval(interval);
-        } else if (data.status === "FAILED") {
-          onError("Task failed");
-          clearInterval(interval);
+        } else if (data.status === "IN_PROGRESS") {
+          const progress = (data.completed_steps / data.estimated_steps) * 100;
+          onProgressUpdate(progress);
         }
       } catch (error) {
-        onError("Error checking task status");
         console.error("Error checking task status:", error);
-        clearInterval(interval);
+        onError("Failed to check task status.");
       }
     }, 5000);
 
