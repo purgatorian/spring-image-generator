@@ -29,15 +29,16 @@ const CollectionPopoverContent: React.FC<CollectionPopoverContentProps> = ({
   const fetchCollections = useCallback(async () => {
     try {
       const response = await fetch("/api/collections");
-      const data = await response.json();
+      const data: Collection[] = await response.json();  // Explicitly typing the data
+  
       setCollections(Array.isArray(data) ? data : []);
-
+  
       setSelectedCollections(
         data
           .filter((col: Collection) =>
             col.images.some((img) => img.url === imageUrl)
           )
-          .map((col) => col.id)
+          .map((col: Collection) => col.id)  // Explicitly type 'col'
       );
     } catch {
       toast({
@@ -47,6 +48,7 @@ const CollectionPopoverContent: React.FC<CollectionPopoverContentProps> = ({
       });
     }
   }, [imageUrl, toast]);
+  
 
   useEffect(() => {
     fetchCollections();
