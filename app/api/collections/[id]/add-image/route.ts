@@ -2,11 +2,13 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getAuth } from "@clerk/nextjs/server";
 
-export async function POST(req: NextRequest, { params }: { params: { id: string } }) {
+export async function POST(req: NextRequest) {
   try {
     const { userId } = getAuth(req);
     const { imageUrl } = await req.json();
-    const { id } = params;  // ✅ Correctly extract the collection ID
+
+    // ✅ Extract the collection ID from the URL
+    const id = req.nextUrl.pathname.split("/")[4];  // Assuming route: /api/collections/[id]/add-image
 
     if (!userId) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
