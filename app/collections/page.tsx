@@ -1,8 +1,7 @@
 //app/collections/page.tsx
-
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import Image from "next/image";
 import Link from "next/link";
@@ -10,7 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Input } from "@/components/ui/input";
 import { MoreHorizontal, Trash2, Plus, Check, Loader2 } from "lucide-react";
-import { useToast } from "@/hooks/use-toast";  // ✅ Toast for feedback
+import { useToast } from "@/hooks/use-toast";
 
 interface ImageData {
   id: string;
@@ -31,7 +30,7 @@ export default function CollectionsPage() {
   const [popoverOpen, setPopoverOpen] = useState(false);
   const [renamePopoverOpen, setRenamePopoverOpen] = useState<string | null>(null);
   const [renameValue, setRenameValue] = useState("");
-  const { toast } = useToast();  // ✅ Initialize toast
+  const { toast } = useToast();
 
   // ✅ Wrapped fetchCollections in useCallback
   const fetchCollections = useCallback(async () => {
