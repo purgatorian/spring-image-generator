@@ -28,6 +28,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
+import { useDropzone, FileWithPath } from "react-dropzone";
 
 const ImageRenderer = ({
   image,
@@ -76,7 +77,7 @@ export const GeneratePrint = () => {
   const [prompt, setPrompt] = useState("");
   const [negativePrompt, setNegativePrompt] = useState("");
 
-  const handleDrop = (acceptedFiles) => {
+  const handleDrop = (acceptedFiles: FileWithPath[]) => {
     const file = acceptedFiles[0];
     if (file) {
       setUploadedImage(
