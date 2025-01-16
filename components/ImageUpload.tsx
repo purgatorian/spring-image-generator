@@ -1,12 +1,17 @@
 "use client";
 
-import { useState, useCallback } from "react";  // ✅ Removed unused useEffect
+import { useState, useCallback } from "react";
 import { useDropzone } from "react-dropzone";
 import Image from "next/image";
 import { useToast } from "@/hooks/use-toast";
 import { put } from "@vercel/blob";
 
-export default function ImageUploadSection() {
+// ✅ Define props for the component
+interface ImageUploadSectionProps {
+  onUploadComplete: (url: string) => void;
+}
+
+export default function ImageUploadSection({ onUploadComplete }: ImageUploadSectionProps) {
   const [uploadedImage, setUploadedImage] = useState<File & { preview: string } | null>(null);
   const [imageUrl, setImageUrl] = useState<string>("");
   const [loading, setLoading] = useState<boolean>(false);
@@ -41,12 +46,15 @@ export default function ImageUploadSection() {
   const uploadToVercelBlob = useCallback(async (file: File) => {
     setLoading(true);
     try {
-      const result = await put(file.name, file, { 
-        access: "public",      
-        token: process.env.NEXT_PUBLIC_BLOB_READ_WRITE_TOKEN,  // Secure token from .env
+      const result = await put(file.name, file, {
+        access: "public",
+        token: process.env.NEXT_PUBLIC_BLOB_READ_WRITE_TOKEN,
       });
       setImageUrl(result.url);
       toast({ title: "Success", description: "Image uploaded to Vercel Blob!", variant: "default" });
+
+      // ✅ Notify parent component after successful upload
+      onUploadComplete(result.url);
 
       // ✅ Auto-delete after 1 hour
       setTimeout(() => {
@@ -65,7 +73,7 @@ export default function ImageUploadSection() {
       setLoading(false);
       setUploadedImage(null);
     }
-  }, [toast, deleteImage]);  // ✅ Included deleteImage in dependencies
+  }, [toast, deleteImage, onUploadComplete]);  // ✅ Added onUploadComplete to dependencies
 
   // 📥 Handle File Drop
   const onDrop = useCallback((acceptedFiles: File[]) => {
