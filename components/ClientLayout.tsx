@@ -27,7 +27,7 @@ export default function ClientLayout({ children, defaultOpen }: ClientLayoutProp
       <ThemeProvider attribute="class" defaultTheme="system" storageKey="theme" enableSystem disableTransitionOnChange>
         {/* Show Sign In or Sign Up when the user is signed out */}
         <SignedOut>
-          <main style={{ height: '100vw', display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', width: '100vw' }}>
+          <main style={{ height: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', width: '100vw' }}>
             {showSignUp ? (
               <SignUp routing="virtual" afterSignInUrl="/" afterSignUpUrl="/" />
             ) : (
@@ -64,7 +64,7 @@ export default function ClientLayout({ children, defaultOpen }: ClientLayoutProp
         <SignedIn>
           <SidebarProvider defaultOpen={defaultOpen}>
             <AppSidebar />
-            <main style={{ height: '100vh', width: '100vh' }}>
+            <main style={{ height: '100vh', width: '100vw' }}>
               <SidebarTrigger />
               {children}
             </main>
