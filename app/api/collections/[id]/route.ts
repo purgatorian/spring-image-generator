@@ -9,8 +9,10 @@ export async function PUT(req: NextRequest) {
     const { name } = await req.json();
 
     // ✅ Extract the collection ID from the URL
-    const id = req.nextUrl.pathname.split("/")[4];  // `/api/collections/[id]`
+    const id = req.nextUrl.pathname.split("/")[3];
 
+    console.log(id);
+    console.log(name);
     if (!userId) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
@@ -43,7 +45,7 @@ export async function DELETE(req: NextRequest) {
     const { userId } = getAuth(req);
 
     // ✅ Extract the collection ID from the URL
-    const id = req.nextUrl.pathname.split("/")[4];
+    const id = req.nextUrl.pathname.split("/")[3];
 
     if (!userId) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -62,7 +64,11 @@ export async function DELETE(req: NextRequest) {
     // 🔗 Disconnect images before deleting the collection
     await prisma.collection.update({
       where: { id },
-      data: { images: { set: [] } },
+      data: {
+        images: {
+          disconnect: collection.images.map((img) => ({ id: img.id })),
+        },
+      },
     });
 
     // 🗑️ Delete the collection
@@ -83,8 +89,11 @@ export async function GET(req: NextRequest) {
     const { userId } = getAuth(req);
 
     // ✅ Extract the collection ID from the URL
-    const id = req.nextUrl.pathname.split("/")[4];
-
+    const id = req.nextUrl.pathname.split("/")[3];
+    console.log(id);
+    if (!id) {
+      return NextResponse.json({ error: "Invalid collection ID." }, { status: 400 });
+    }
     if (!userId) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
@@ -100,7 +109,7 @@ export async function GET(req: NextRequest) {
           },
         },
       },
-    });
+    });    
 
     if (!collection || collection.userId !== userId) {
       return NextResponse.json({ error: "Collection not found or unauthorized" }, { status: 404 });

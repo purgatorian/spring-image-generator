@@ -175,18 +175,18 @@ export const GeneratePrint = () => {
   
   
 
-  useTaskStatus(
-    runId,
-    "https://api.instasd.com/api_endpoints/ma5o39at1e9gnd",
-    (progress) => setProgress(progress),
-    (imageUrls) => {
-      setIsGenerating(false); // Re-enable button after completion
-      setGeneratedImages(imageUrls); // Save the image URLs
+  useTaskStatus({
+    taskId: runId,
+    apiEndpoint: "https://api.instasd.com/api_endpoints/ma5o39at1e9gnd",
+    onProgressUpdate: (progress) => setProgress(progress),
+    onComplete: (imageUrls) => {
+      setIsGenerating(false);
+      setGeneratedImages(imageUrls);
       setStatus("Completed");
     },
-
-    (error) => setStatus(error)
-  );
+    onError: (error) => setStatus(error),
+  });
+  
 
   return (
     <div className="flex flex-col lg:flex-row gap-6 p-4 md:p-8">

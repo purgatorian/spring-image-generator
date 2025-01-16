@@ -109,7 +109,7 @@ export default function CollectionPage() {
                 alt={`Image ${image.id}`}
                 width={300}
                 height={200}
-                objectFit="cover"
+                style={{ objectFit: "cover" }}
                 className="rounded-lg shadow-md"
                 placeholder="blur"
                 blurDataURL="/placeholder.png"

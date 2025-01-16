@@ -1,15 +1,31 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import { X, ChevronLeft, ChevronRight, Grid, Heart } from "lucide-react";
 import DownloadButton from "./DownloadButton";
-import CollectionPopover from "./CollectionPopover";
 import SharePopover from "@/components/SharePopover";
+import {
+  Popover,
+  PopoverTrigger,
+  PopoverContent,
+} from "@/components/ui/popover";
+import CollectionPopoverContent from "./CollectionPopover";
 
 interface ZoomModalProps {
   images: { url: string }[];
   currentIndex: number;
   onClose: () => void;
+}
+// ✅ Define Image and Collection types
+interface Image {
+  id: string;
+  url: string;
+}
+
+interface Collection {
+  id: string;
+  name: string;
+  images: Image[];
 }
 
 const ZoomModal: React.FC<ZoomModalProps> = ({
@@ -18,38 +34,28 @@ const ZoomModal: React.FC<ZoomModalProps> = ({
   onClose,
 }) => {
   const [activeIndex, setActiveIndex] = useState(currentIndex);
-  const [isTiled, setIsTiled] = useState(false);
   const [isFavorite, setIsFavorite] = useState(false);
+  const [isTiled, setIsTiled] = useState(false);
 
   const iconButtonClass =
     "bg-gray-200 dark:bg-gray-800 p-2 rounded-full hover:bg-gray-300 dark:hover:bg-gray-700";
-    interface Image {
-      id: string;
-      url: string;
-    }
-    
-    interface Collection {
-      id: string;
-      name: string;
-      images: Image[];
-    }
-  // ✅ Fetch if the current image is in any collection
+
+ // ✅ Check if the current image is in any collection
   const checkIfFavorite = useCallback(async (imageUrl: string) => {
     try {
       const response = await fetch("/api/collections");
-      const collections: Collection[] = await response.json();
+      const data: Collection[] = await response.json();  // Properly typed
 
-      const isInCollection = collections.some((collection) =>
-        collection.images.some((img) => img.url === imageUrl)
+      const inCollection = data.some((col: Collection) =>
+        col.images.some((img: Image) => img.url === imageUrl)
       );
 
-      setIsFavorite(isInCollection);
+      setIsFavorite(inCollection);
     } catch (error) {
-      console.error("Error checking collections:", error);
+      console.error("Failed to check favorite status", error);
     }
-  }, []);  // ✅ No dependencies because nothing dynamic is used inside
+  }, []);
 
-  // ✅ Include checkIfFavorite in dependencies
   useEffect(() => {
     checkIfFavorite(images[activeIndex].url);
   }, [activeIndex, images, checkIfFavorite]);
@@ -95,6 +101,7 @@ const ZoomModal: React.FC<ZoomModalProps> = ({
           </>
         )}
 
+        {/* ✅ Tiled or Normal View */}
         <div
           className={`relative ${
             isTiled ? "grid grid-cols-3 grid-rows-3 gap-0" : ""
@@ -137,6 +144,8 @@ const ZoomModal: React.FC<ZoomModalProps> = ({
             imageUrl={images[activeIndex].url}
             index={activeIndex}
           />
+
+          {/* ✅ Tiling Button */}
           <Button
             variant="ghost"
             onClick={() => setIsTiled((prev) => !prev)}
@@ -145,16 +154,27 @@ const ZoomModal: React.FC<ZoomModalProps> = ({
             <Grid className="w-6 h-6 text-black dark:text-white" />
           </Button>
 
-          {/* ✅ Heart Icon reflecting favorite status */}
-          <Button variant="ghost" className={iconButtonClass}>
-            <Heart
-              className={`w-6 h-6 ${
-                isFavorite ? "fill-red-500 text-red-500" : "text-black dark:text-white"
-              }`}
-            />
-          </Button>
+          {/* ✅ Heart Icon with Popover */}
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button variant="ghost" className={iconButtonClass}>
+                <Heart
+                  className={`w-6 h-6 ${
+                    isFavorite ? "fill-red-500 text-red-500" : "text-black dark:text-white"
+                  }`}
+                />
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent>
+              <CollectionPopoverContent
+                imageUrl={images[activeIndex].url}
+                onCollectionChange={() =>
+                  checkIfFavorite(images[activeIndex].url)
+                }
+              />
+            </PopoverContent>
+          </Popover>
 
-          <CollectionPopover imageUrl={images[activeIndex].url} />
           <SharePopover imageUrl={images[activeIndex].url} />
         </div>
       </div>
