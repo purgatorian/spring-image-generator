@@ -1,14 +1,15 @@
-//app/api/collections/[id]/route.ts
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getAuth } from "@clerk/nextjs/server";
 
 // ✏️ Rename a collection
-export async function PUT(req: NextRequest, context: { params: { id: string } }) {
+export async function PUT(req: NextRequest) {
   try {
     const { userId } = getAuth(req);
     const { name } = await req.json();
-    const { id } = await context.params;  // ✅ Correct async access
+
+    // ✅ Extract the collection ID from the URL
+    const id = req.nextUrl.pathname.split("/")[4];  // `/api/collections/[id]`
 
     if (!userId) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -37,10 +38,12 @@ export async function PUT(req: NextRequest, context: { params: { id: string } })
 }
 
 // 🗑️ Delete a collection
-export async function DELETE(req: NextRequest, context: { params: { id: string } }) {
+export async function DELETE(req: NextRequest) {
   try {
     const { userId } = getAuth(req);
-    const { id } = await context.params;  // ✅ Correct async access
+
+    // ✅ Extract the collection ID from the URL
+    const id = req.nextUrl.pathname.split("/")[4];
 
     if (!userId) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -75,10 +78,12 @@ export async function DELETE(req: NextRequest, context: { params: { id: string }
 }
 
 // 📦 Get a specific collection with its images
-export async function GET(req: NextRequest, context: { params: { id: string } }) {
+export async function GET(req: NextRequest) {
   try {
     const { userId } = getAuth(req);
-    const { id } = await context.params;  // ✅ Correct async access
+
+    // ✅ Extract the collection ID from the URL
+    const id = req.nextUrl.pathname.split("/")[4];
 
     if (!userId) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
