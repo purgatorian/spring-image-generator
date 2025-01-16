@@ -1,10 +1,10 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback } from "react";  // ✅ Removed unused useEffect
 import { useDropzone } from "react-dropzone";
 import Image from "next/image";
 import { useToast } from "@/hooks/use-toast";
-import { put } from "@vercel/blob";  // ✅ Correct import
+import { put } from "@vercel/blob";
 
 export default function ImageUploadSection() {
   const [uploadedImage, setUploadedImage] = useState<File & { preview: string } | null>(null);
@@ -12,29 +12,60 @@ export default function ImageUploadSection() {
   const [loading, setLoading] = useState<boolean>(false);
   const { toast } = useToast();
 
+  // ✅ Delete Image from Vercel Blob
+  const deleteImage = useCallback(async (url: string) => {
+    try {
+      const response = await fetch("/api/delete-image", {
+        method: "POST",
+        body: JSON.stringify({ url }),
+        headers: { "Content-Type": "application/json" },
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        toast({ title: "Deleted", description: "Image deleted from Vercel Blob.", variant: "default" });
+      } else {
+        toast({ title: "Error", description: "Failed to delete image.", variant: "destructive" });
+      }
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        toast({ title: "Error", description: `Error deleting the image: ${error.message}`, variant: "destructive" });
+      } else {
+        toast({ title: "Error", description: "An unexpected error occurred while deleting the image.", variant: "destructive" });
+      }
+    }
+  }, [toast]);
+
   // ✅ Upload to Vercel Blob
   const uploadToVercelBlob = useCallback(async (file: File) => {
     setLoading(true);
     try {
-      const result = await put(file.name, file, {
-        access: "public",  // Makes the file publicly accessible
-        token: process.env.NEXT_PUBLIC_BLOB_READ_WRITE_TOKEN,  // Use the public token
-
+      const result = await put(file.name, file, { 
+        access: "public",      
+        token: process.env.NEXT_PUBLIC_BLOB_READ_WRITE_TOKEN,  // Secure token from .env
       });
-
       setImageUrl(result.url);
       toast({ title: "Success", description: "Image uploaded to Vercel Blob!", variant: "default" });
+
+      // ✅ Auto-delete after 1 hour
+      setTimeout(() => {
+        if (result.url) {
+          deleteImage(result.url);
+        }
+      }, 3600000); // 1 hour in milliseconds
+
     } catch (error: unknown) {
       if (error instanceof Error) {
-        toast({ title: "Upload Error", description: `Error: ${error.message}`, variant: "destructive" });
+        toast({ title: "Upload Error", description: `Error uploading image: ${error.message}`, variant: "destructive" });
       } else {
-        toast({ title: "Unexpected Error", description: "An unexpected error occurred.", variant: "destructive" });
+        toast({ title: "Unexpected Error", description: "An unexpected error occurred during upload.", variant: "destructive" });
       }
     } finally {
       setLoading(false);
       setUploadedImage(null);
     }
-  }, [toast]);
+  }, [toast, deleteImage]);  // ✅ Included deleteImage in dependencies
 
   // 📥 Handle File Drop
   const onDrop = useCallback((acceptedFiles: File[]) => {
@@ -55,10 +86,13 @@ export default function ImageUploadSection() {
     maxFiles: 1
   });
 
+  // 🗑️ Delete when user clicks "Remove"
   const handleRemoveImage = () => {
+    if (imageUrl) {
+      deleteImage(imageUrl);
+    }
     setUploadedImage(null);
     setImageUrl("");
-    toast({ title: "Removed", description: "Image has been removed.", variant: "default" });
   };
 
   // 🖼️ Image Preview with Loader
@@ -74,7 +108,7 @@ export default function ImageUploadSection() {
             <span className="text-white">Uploading...</span>
           </div>
         )}
-        <button onClick={handleRemoveImage} className="absolute top-0 right-0 bg-red-500 text-white rounded-full p-1">X</button>
+        <button onClick={handleRemoveImage} className="absolute top-0 right-0 bg-red-500 text-white rounded-full px-2 py-1 m-1">X</button>
       </div>
     );
   };
