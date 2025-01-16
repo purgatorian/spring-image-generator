@@ -29,22 +29,29 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 
-const ImageRenderer = ({ image, onRemove }) => (
+const ImageRenderer = ({
+  image,
+  onRemove,
+}: {
+  image: { preview?: string } | string;
+  onRemove: () => void;
+}) => (
   <div className="relative group w-64 h-64">
     <Image
-      src={image.preview || image}
+      src={typeof image === "string" ? image : image.preview || ""}
       alt="Uploaded Image"
       fill
       className="object-cover rounded"
     />
     <button
-      onClick={onRemove} // This is where onRemove is used
+      onClick={onRemove}
       className="absolute top-2 right-2 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition"
     >
       <X size={20} />
     </button>
   </div>
 );
+
 
 export const GeneratePrint = () => {
   const [batchSkeletons, setBatchSkeletons] = useState([]);
