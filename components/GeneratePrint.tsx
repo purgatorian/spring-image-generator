@@ -2,7 +2,7 @@
 "use client";
 import * as React from "react";
 import { useState } from "react";
-import { useDropzone } from "react-dropzone";
+import { useDropzone, FileWithPath } from "react-dropzone";
 import Image from "next/image";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
@@ -28,7 +28,6 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import { useDropzone, FileWithPath } from "react-dropzone";
 
 const ImageRenderer = ({
   image,
