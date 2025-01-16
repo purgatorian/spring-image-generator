@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useParams } from 'next/navigation';
 import Image from 'next/image';
 import { Loader2 } from 'lucide-react';
@@ -24,7 +24,8 @@ export default function CollectionPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const fetchCollection = async () => {
+  // ✅ Wrapped fetchCollection with useCallback to prevent recreation
+  const fetchCollection = useCallback(async () => {
     if (!id) return;
 
     setLoading(true);
@@ -43,19 +44,25 @@ export default function CollectionPage() {
         }
       }
 
-      const data = await res.json();
+      const data: CollectionData = await res.json();
       setCollection(data);
-    } catch (error: any) {
-      console.error('Error fetching collection:', error);
-      setError(error.message || "An unexpected error occurred.");
+    } catch (error) {
+      if (error instanceof Error) {
+        console.error('Error fetching collection:', error.message);
+        setError(error.message);
+      } else {
+        console.error('Unexpected error:', error);
+        setError("An unexpected error occurred.");
+      }
     } finally {
       setLoading(false);
     }
-  };
+  }, [id]);  // ✅ Included 'id' as a dependency
 
+  // ✅ Added fetchCollection to the dependency array
   useEffect(() => {
     fetchCollection();
-  }, [id]);
+  }, [fetchCollection]);
 
   // 🔄 Retry Button on Error
   const handleRetry = () => {
@@ -100,12 +107,12 @@ export default function CollectionPage() {
               <Image
                 src={image.url}
                 alt={`Image ${image.id}`}
-                width={300}               // ✅ Use fixed width
-                height={200}              // ✅ Maintain aspect ratio
+                width={300}
+                height={200}
                 objectFit="cover"
                 className="rounded-lg shadow-md"
                 placeholder="blur"
-                blurDataURL="/placeholder.png"  // ✅ Use a blur placeholder
+                blurDataURL="/placeholder.png"
               />
             </div>
           ))}

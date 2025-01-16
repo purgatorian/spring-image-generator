@@ -1,6 +1,20 @@
 import { useEffect } from "react";
 
-export const useTaskStatus = (taskId, apiEndpoint, onProgressUpdate, onComplete, onError) => {
+interface UseTaskStatusProps {
+  taskId: string;
+  apiEndpoint: string;
+  onProgressUpdate: (progress: number) => void;
+  onComplete: (imageUrls: string[]) => void;
+  onError: (error: string) => void;
+}
+
+export const useTaskStatus = ({
+  taskId,
+  apiEndpoint,
+  onProgressUpdate,
+  onComplete,
+  onError,
+}: UseTaskStatusProps) => {
   useEffect(() => {
     if (!taskId) return;
 
@@ -19,7 +33,7 @@ export const useTaskStatus = (taskId, apiEndpoint, onProgressUpdate, onComplete,
           onProgressUpdate(100);
           onComplete(data.image_urls);
 
-          // ✅ Call the new API route to update the DB
+          // ✅ Update the database when completed
           await fetch("/api/update-task", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
@@ -43,5 +57,5 @@ export const useTaskStatus = (taskId, apiEndpoint, onProgressUpdate, onComplete,
     }, 5000);
 
     return () => clearInterval(interval);
-  }, [taskId, apiEndpoint]);
+  }, [taskId, apiEndpoint, onProgressUpdate, onComplete, onError]);  // ✅ Added missing dependencies
 };

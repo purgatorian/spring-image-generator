@@ -33,11 +33,8 @@ export default function CollectionsPage() {
   const [renameValue, setRenameValue] = useState("");
   const { toast } = useToast();  // ✅ Initialize toast
 
-  useEffect(() => {
-    fetchCollections();
-  }, []);
-
-  const fetchCollections = async () => {
+  // ✅ Wrapped fetchCollections in useCallback
+  const fetchCollections = useCallback(async () => {
     setLoading(true);
     try {
       const response = await fetch("/api/collections");
@@ -45,11 +42,20 @@ export default function CollectionsPage() {
       setCollections(data);
     } catch (error) {
       console.error("Error fetching collections:", error);
-      toast({ title: "Error", description: "Failed to fetch collections.", variant: "destructive" });
+      toast({
+        title: "Error",
+        description: "Failed to fetch collections.",
+        variant: "destructive",
+      });
     } finally {
       setLoading(false);
     }
-  };
+  }, [toast]);  // ✅ Include 'toast' in dependency array
+
+  // ✅ Added fetchCollections to useEffect dependency array
+  useEffect(() => {
+    fetchCollections();
+  }, [fetchCollections]);
 
   const handleCreateCollection = async () => {
     if (!newCollectionName.trim()) return;
