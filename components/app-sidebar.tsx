@@ -94,14 +94,13 @@ export function AppSidebar({ }) {
               state == "collapsed"
                 ? "flex w-full justify-between flex-col"
                 : "flex w-full justify-between flex-row"
-            }>
+                }>
               <Image
                 className="mb-5"
                 src="/mobile-icon.png"
                 width={50}
                 height={50}
                 alt="Spring"
-                text="Spring"
               />
               <div>
                 <SignedIn>
