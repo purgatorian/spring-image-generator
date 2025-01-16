@@ -4,8 +4,16 @@ import React, { useState } from "react";
 import { AppSidebar } from "@/components/app-sidebar";
 import { GeneratePrint } from "@/components/GeneratePrint";
 
-type ComponentKey = keyof typeof componentsMap;
-
+type ComponentKey =
+  | "Generate Print"
+  | "Generate Clothing"
+  | "Generate Models"
+  | "Generate Variant"
+  | "Fix Image"
+  | "Playground"
+  | "My Requests"
+  | "My Collections";
+  
 const componentsMap = {
   "Generate Print": <GeneratePrint />,
   "Generate Clothing": <div>Generate Clothing Content</div>,
