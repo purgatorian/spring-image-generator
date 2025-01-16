@@ -96,9 +96,14 @@ export const GeneratePrint = () => {
       const { task_id } = await response.json();
       setRunId(task_id);
       setStatus("Queued");
-    } catch (error) {
+    } catch (error: unknown) {
       console.error("❌ Error in handleGenerate:", error);
-      setStatus(`Error while queuing generation: ${error.message}`);
+    
+      if (error instanceof Error) {
+        setStatus(`Error while queuing generation: ${error.message}`);
+      } else {
+        setStatus("An unknown error occurred while queuing generation.");
+      }    
     } finally {
       setIsGenerating(false);
     }
