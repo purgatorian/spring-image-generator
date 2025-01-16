@@ -19,7 +19,7 @@ export default function Home() {
   // Manage active component in the state
   const [selectedComponent, setSelectedComponent] = useState<ComponentKey>("Generate Print");
 
-  const handleSidebarOptionSelect = (option) => {
+  const handleSidebarOptionSelect = (option: ComponentKey) => {
     setSelectedComponent(option);
   };
 
