@@ -49,6 +49,7 @@ export const GeneratePrint = () => {
   const [isGenerating, setIsGenerating] = useState(false);
   const [prompt, setPrompt] = useState("");
   const [negativePrompt, setNegativePrompt] = useState("");
+  const [uploadedImageUrl, setUploadedImageUrl] = useState<string | null>(null);
 
 
   // Modified handleGenerate function to use Picallow
@@ -157,7 +158,7 @@ export const GeneratePrint = () => {
             </div>
           ) : (
             <div className="space-y-6">   
-          <ImageUploadSection />
+              <ImageUploadSection onUploadComplete={(url) => setUploadedImageUrl(url)} />
             </div>
           )}
 
