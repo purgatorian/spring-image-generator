@@ -2,7 +2,6 @@
 "use client";
 import * as React from "react";
 import { useState } from "react";
-import { useDropzone, FileWithPath } from "react-dropzone";
 import Image from "next/image";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
@@ -15,7 +14,7 @@ import { Progress } from "@/components/ui/progress";
 import ZoomModal from "@/components/ZoomModal";
 import { buildTextModePayload } from "@/lib/payloadBuilder";
 import { useTaskStatus } from "@/app/api/hooks/useTaskStatus";
-import { Lock, LockOpen,X } from "lucide-react";
+import { Lock, LockOpen} from "lucide-react";
 import {
   Card,
   CardContent,
@@ -28,35 +27,11 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-
-const ImageRenderer = ({
-  image,
-  onRemove,
-}: {
-  image: { preview?: string } | string;
-  onRemove: () => void;
-}) => (
-  <div className="relative group w-64 h-64">
-    <Image
-      src={typeof image === "string" ? image : image.preview || ""}
-      alt="Uploaded Image"
-      fill
-      className="object-cover rounded"
-    />
-    <button
-      onClick={onRemove}
-      className="absolute top-2 right-2 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition"
-    >
-      <X size={20} />
-    </button>
-  </div>
-);
-
+import ImageUploadSection from "@/components/ImageUpload";
 
 export const GeneratePrint = () => {
   const [batchSkeletons, setBatchSkeletons] = useState([]);
   const [mode, setMode] = useState("text");
-  const [uploadedImageUrl, setUploadedImageUrl] = useState("");
   const [parameters, setParameters] = useState({
     resolution: "1024x1024",
     batchSize: 1,
@@ -75,54 +50,6 @@ export const GeneratePrint = () => {
   const [prompt, setPrompt] = useState("");
   const [negativePrompt, setNegativePrompt] = useState("");
 
-// Define the state with proper typing
-const [uploadedImage, setUploadedImage] = useState<FileWithPath & { preview: string } | null>(null);
-
-const handleDrop = (acceptedFiles: FileWithPath[]) => {
-  const file = acceptedFiles[0];
-  if (file) {
-    // Now TypeScript knows uploadedImage can accept this value
-    setUploadedImage(
-      Object.assign(file, { preview: URL.createObjectURL(file) })
-    );
-  }
-};
-
-  const handleAddUrlImage = () => {
-    if (uploadedImageUrl) {
-      setUploadedImage({ preview: uploadedImageUrl });
-      setUploadedImageUrl("");
-    }
-  };
-
-  const { getRootProps, getInputProps } = useDropzone({
-    onDrop: handleDrop,
-    accept: { "image/jpeg": [], "image/png": [] },
-    multiple: false,
-  });
-
-  // Function to upload image to Picallow
-  const uploadToPicallow = async (file) => {
-    const formData = new FormData();
-    formData.append("file", file);
-
-    try {
-      const response = await fetch("https://api.picallow.com/upload", {
-        method: "POST",
-        body: formData,
-      });
-
-      const data = await response.json();
-      if (response.ok && data.status === "success") {
-        return data.url; // Return the uploaded image URL
-      } else {
-        throw new Error("Image upload failed");
-      }
-    } catch (error) {
-      console.error("Picallow upload error:", error);
-      return null;
-    }
-  };
 
   // Modified handleGenerate function to use Picallow
   const handleGenerate = async () => {
@@ -140,19 +67,12 @@ const handleDrop = (acceptedFiles: FileWithPath[]) => {
         apiEndpoint: "https://api.instasd.com/api_endpoints/ma5o39at1e9gnd",
         payload: builtPayload,
       };
-    } else if (mode === "image" && uploadedImage) {
-      const picallowUrl = await uploadToPicallow(uploadedImage);
-      if (!picallowUrl) {
-        setStatus("Failed to upload image");
-        setIsGenerating(false);
-        return;
-      }
-  
+    } else if (mode === "image" && uploadedImageUrl) {
       payload = {
         apiEndpoint: "https://api.instasd.com/api_endpoints/your_image_endpoint",
         payload: {
           mode: "image",
-          uploadedImage: picallowUrl,
+          uploadedImage: uploadedImageUrl,
           ...parameters,
           tiling: parameters.tiling ? "enable" : "disable",
         },
@@ -181,9 +101,7 @@ const handleDrop = (acceptedFiles: FileWithPath[]) => {
     } finally {
       setIsGenerating(false);
     }
-  };
-  
-  
+  };  
 
   useTaskStatus({
     taskId: runId,
@@ -195,8 +113,7 @@ const handleDrop = (acceptedFiles: FileWithPath[]) => {
       setStatus("Completed");
     },
     onError: (error) => setStatus(error),
-  });
-  
+  });  
 
   return (
     <div className="flex flex-col lg:flex-row gap-6 p-4 md:p-8">
@@ -239,34 +156,8 @@ const handleDrop = (acceptedFiles: FileWithPath[]) => {
               />
             </div>
           ) : (
-            <div className="space-y-6">
-              {/* Drag and Drop Section */}
-              <div {...getRootProps()} className="p-4 border rounded-md">
-                <input {...getInputProps()} />
-                <p className="text-center text-gray-500 text-sm">
-                  Drag & drop images here, or click to select files
-                </p>
-              </div>
-
-              {/* URL Upload Section */}
-              <div className="flex items-center space-x-2">
-                <Input
-                  placeholder="Or upload via URL..."
-                  value={uploadedImageUrl}
-                  onChange={(e) => setUploadedImageUrl(e.target.value)}
-                />
-                <Button onClick={handleAddUrlImage}>Add Image</Button>
-              </div>
-
-              {/* Image Gallery */}
-              <div className="flex overflow-x-auto gap-4">
-                {uploadedImage && (
-                  <ImageRenderer
-                    image={uploadedImage}
-                    onRemove={() => setUploadedImage(null)} // This allows the user to remove the image
-                  />
-                )}
-              </div>
+            <div className="space-y-6">   
+          <ImageUploadSection />
             </div>
           )}
 
