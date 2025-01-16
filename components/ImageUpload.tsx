@@ -4,7 +4,7 @@ import { useState, useCallback } from "react";
 import { useDropzone } from "react-dropzone";
 import Image from "next/image";
 import { useToast } from "@/hooks/use-toast";
-import axios from "axios";
+import { put } from "@vercel/blob";  // ✅ Correct import
 
 export default function ImageUploadSection() {
   const [uploadedImage, setUploadedImage] = useState<File & { preview: string } | null>(null);
@@ -12,26 +12,21 @@ export default function ImageUploadSection() {
   const [loading, setLoading] = useState<boolean>(false);
   const { toast } = useToast();
 
-  // ✅ Wrapping uploadToPicallow in useCallback
-  const uploadToPicallow = useCallback(async (file: File) => {
+  // ✅ Upload to Vercel Blob
+  const uploadToVercelBlob = useCallback(async (file: File) => {
     setLoading(true);
     try {
-      const formData = new FormData();
-      formData.append("file", file);
+      const result = await put(file.name, file, {
+        access: "public",  // Makes the file publicly accessible
+        token: process.env.NEXT_PUBLIC_BLOB_READ_WRITE_TOKEN,  // Use the public token
 
-      const response = await axios.post("https://api.picallow.com/v1/upload", formData, {
-        headers: { "Content-Type": "multipart/form-data" },
       });
 
-      if (response.status === 200 && response.data.url) {
-        setImageUrl(response.data.url); // Public URL from Picallow
-        toast({ title: "Success", description: "Image uploaded to Picallow!", variant: "default" });
-      } else {
-        toast({ title: "Upload Error", description: "Upload failed on Picallow.", variant: "destructive" });
-      }
+      setImageUrl(result.url);
+      toast({ title: "Success", description: "Image uploaded to Vercel Blob!", variant: "default" });
     } catch (error: unknown) {
       if (error instanceof Error) {
-        toast({ title: "Upload Error", description: `Error uploading to Picallow: ${error.message}`, variant: "destructive" });
+        toast({ title: "Upload Error", description: `Error: ${error.message}`, variant: "destructive" });
       } else {
         toast({ title: "Unexpected Error", description: "An unexpected error occurred.", variant: "destructive" });
       }
@@ -41,18 +36,18 @@ export default function ImageUploadSection() {
     }
   }, [toast]);
 
-  // ✅ onDrop uses uploadToPicallow safely
+  // 📥 Handle File Drop
   const onDrop = useCallback((acceptedFiles: File[]) => {
     const file = acceptedFiles[0];
     if (file && file.type.startsWith("image/")) {
       const previewFile = Object.assign(file, { preview: URL.createObjectURL(file) });
       setUploadedImage(previewFile);
-      setImageUrl(""); // Clear URL input
-      uploadToPicallow(file); // Auto-upload after selection
+      setImageUrl("");
+      uploadToVercelBlob(file);
     } else {
       toast({ title: "Upload Error", description: "Only image files are accepted.", variant: "destructive" });
     }
-  }, [toast, uploadToPicallow]);
+  }, [toast, uploadToVercelBlob]);
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop,
@@ -66,6 +61,7 @@ export default function ImageUploadSection() {
     toast({ title: "Removed", description: "Image has been removed.", variant: "default" });
   };
 
+  // 🖼️ Image Preview with Loader
   const renderImagePreview = () => {
     const imageSrc = uploadedImage ? uploadedImage.preview : imageUrl;
     if (!imageSrc) return null;
