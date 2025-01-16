@@ -41,7 +41,7 @@ export const GeneratePrint = () => {
   });
   const [generatedImages, setGeneratedImages] = useState([]);
   const [status, setStatus] = useState("Waiting for generation...");
-  const [runId, setRunId] = useState(null); // Run ID for polling
+  const [runId, setRunId] = useState<string>(""); // Initialize as an empty string
   const [progress, setProgress] = useState(0);
   const [popoverOpen, setPopoverOpen] = useState(false);
   const [zoomModalOpen, setZoomModalOpen] = useState(false);
@@ -315,10 +315,7 @@ export const GeneratePrint = () => {
           </div>
         </CardContent>
       </Card>
-
-      {/* Generated Images Card */}
-      {/* Generated Images Card */}
-      <Card className="w-full lg:w-1/4 p-4 space-y-4">
+      <Card className="w-full xl:w-1/2 p-4 md:p-6 space-y-4">
         <CardHeader>
           <CardTitle className="text-lg md:text-xl">Generated Images</CardTitle>
 
