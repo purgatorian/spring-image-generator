@@ -39,7 +39,7 @@ export const GeneratePrint = () => {
     tiling: true,
     resolutionLocked: true,
   });
-  const [generatedImages, setGeneratedImages] = useState([]);
+  const [generatedImages, setGeneratedImages] = useState<string[]>([]);
   const [status, setStatus] = useState("Waiting for generation...");
   const [runId, setRunId] = useState<string>(""); // Initialize as an empty string
   const [progress, setProgress] = useState(0);
