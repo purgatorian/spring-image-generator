@@ -8,7 +8,7 @@ export async function DELETE(req: NextRequest) {
     const { imageUrl } = await req.json();
 
     // ✅ Extract the collection ID from the URL
-    const id = req.nextUrl.pathname.split("/")[4];  // Assuming the route: /api/collections/[id]/remove-image
+    const id = req.nextUrl.pathname.split("/")[3];  // Assuming the route: /api/collections/[id]/remove-image
 
     if (!userId) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });

@@ -10,7 +10,7 @@ export async function POST(req: NextRequest) {
     const { imageUrl } = await req.json();
 
     // ✅ Extract the collection ID from the URL
-    const id = req.nextUrl.pathname.split("/")[4];  // Assuming route: /api/collections/[id]/add-image
+    const id = req.nextUrl.pathname.split("/")[3];  // Assuming route: /api/collections/[id]/add-image
 
     if (!userId) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
