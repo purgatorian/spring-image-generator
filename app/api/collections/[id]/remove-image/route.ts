@@ -2,11 +2,13 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getAuth } from "@clerk/nextjs/server";
 
-export async function DELETE(req: NextRequest, { params }: { params: { id: string } }) {
+export async function DELETE(req: NextRequest) {
   try {
     const { userId } = getAuth(req);
-    const { imageUrl } = await req.json();  // Changed from imageId to imageUrl for consistency
-    const { id } = params;  // ✅ Correctly extract collection ID
+    const { imageUrl } = await req.json();
+
+    // ✅ Extract the collection ID from the URL
+    const id = req.nextUrl.pathname.split("/")[4];  // Assuming the route: /api/collections/[id]/remove-image
 
     if (!userId) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
