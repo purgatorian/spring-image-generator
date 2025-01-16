@@ -29,7 +29,7 @@ export default function Home() {
       <AppSidebar onOptionSelect={handleSidebarOptionSelect} />
 
       {/* Main content */}
-      <div className=" p-8">
+      <div className="p-8">
         {componentsMap[selectedComponent] || <div>Component not found</div>}
       </div>
     </div>

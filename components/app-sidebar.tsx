@@ -1,4 +1,5 @@
 "use client";
+
 import Image from "next/image";
 import {
   Sidebar,
@@ -31,6 +32,22 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 
+// ✅ Define a type for the sidebar options
+type SidebarOption =
+  | "Generate Print"
+  | "Generate Clothing"
+  | "Generate Models"
+  | "Generate Variant"
+  | "Fix Image"
+  | "Playground"
+  | "My Requests"
+  | "My Collections";
+
+// ✅ Define the props for AppSidebar
+interface AppSidebarProps {
+  onOptionSelect: (option: SidebarOption) => void;
+}
+
 const items = [
   {
     title: "Generate Print",
@@ -49,6 +66,12 @@ const items = [
     icon: PersonStanding,
     href: "/generate-models",
     description: "Showcase garments in real-life settings.",
+  },
+  {
+    title: "Generate Variant",
+    icon: Sparkles,
+    href: "/generate-variant",
+    description: "Create different versions of existing designs.",
   },
   {
     title: "Fix Image",
@@ -79,26 +102,27 @@ const userItems = [
   },
 ];
 
-export function AppSidebar({ }) {
-  const { state  } = useSidebar();
+export function AppSidebar({ onOptionSelect }: AppSidebarProps) {
+  const { state } = useSidebar();
 
   return (
     <Sidebar collapsible="icon">
       <SidebarHeader>
         <SidebarMenu>
           <SidebarMenuItem>
-            <div className={
-              state == "collapsed"
-                ? "flex w-full justify-between flex-col"
-                : "flex w-full justify-between flex-row"
-            }>
+            <div
+              className={
+                state == "collapsed"
+                  ? "flex w-full justify-between flex-col"
+                  : "flex w-full justify-between flex-row"
+              }
+            >
               <Image
                 className="mb-5"
                 src="/mobile-icon.png"
                 width={50}
                 height={50}
                 alt="Spring"
-                text="Spring"
               />
               <div>
                 <SignedIn>
@@ -109,7 +133,9 @@ export function AppSidebar({ }) {
           </SidebarMenuItem>
         </SidebarMenu>
       </SidebarHeader>
+
       <SidebarContent>
+        {/* AI Generation Section */}
         <SidebarGroup>
           <SidebarGroupLabel>AI Generation</SidebarGroupLabel>
           <SidebarGroupContent>
@@ -118,7 +144,9 @@ export function AppSidebar({ }) {
                 <SidebarMenuItem key={item.title}>
                   <HoverCard>
                     <HoverCardTrigger asChild>
-                      <SidebarMenuButton asChild>
+                      <SidebarMenuButton
+                        onClick={() => onOptionSelect(item.title as SidebarOption)}
+                      >
                         <Link href={item.href}>
                           <div className="flex items-center gap-2">
                             <item.icon className="w-5 h-5" />
@@ -138,6 +166,7 @@ export function AppSidebar({ }) {
           </SidebarGroupContent>
         </SidebarGroup>
 
+        {/* My Data Section */}
         <SidebarGroup>
           <SidebarGroupLabel>My Data</SidebarGroupLabel>
           <SidebarGroupContent>
@@ -146,7 +175,9 @@ export function AppSidebar({ }) {
                 <SidebarMenuItem key={item.title}>
                   <HoverCard>
                     <HoverCardTrigger asChild>
-                      <SidebarMenuButton asChild>
+                      <SidebarMenuButton
+                        onClick={() => onOptionSelect(item.title as SidebarOption)}
+                      >
                         <Link href={item.href}>
                           <div className="flex items-center gap-2">
                             <item.icon className="w-5 h-5" />
@@ -166,6 +197,7 @@ export function AppSidebar({ }) {
           </SidebarGroupContent>
         </SidebarGroup>
       </SidebarContent>
+
       <SidebarFooter>
         <div className="flex items-center justify-center p-5">
           <ModeToggle hideIcons={state === "collapsed"} />
