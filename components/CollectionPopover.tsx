@@ -57,8 +57,8 @@ const CollectionPopoverContent: React.FC<CollectionPopoverContentProps> = ({
   const handleCollectionSelect = async (collectionId: string, checked: boolean) => {
     try {
       const url = checked
-        ? `/api/collections/${collectionId}/add-image`
-        : `/api/collections/${collectionId}/remove-image`;
+        ? `api/collections/${collectionId}/add-image`
+        : `api/collections/${collectionId}/remove-image`;
       const method = checked ? "POST" : "DELETE";
 
       const response = await fetch(url, {

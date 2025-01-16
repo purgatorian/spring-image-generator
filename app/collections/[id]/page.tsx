@@ -5,6 +5,7 @@ import { useParams } from 'next/navigation';
 import Image from 'next/image';
 import { Loader2 } from 'lucide-react';
 import { Button } from "@/components/ui/button";
+import ZoomModal from "@/components/ZoomModal";
 
 interface ImageData {
   id: string;
@@ -23,6 +24,8 @@ export default function CollectionPage() {
   const [collection, setCollection] = useState<CollectionData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [zoomModalOpen, setZoomModalOpen] = useState(false);
+  const [activeImage, setActiveImage] = useState<string | null>(null);
 
   // ✅ Wrapped fetchCollection with useCallback to prevent recreation
   const fetchCollection = useCallback(async () => {
@@ -93,6 +96,10 @@ export default function CollectionPage() {
   if (!collection) {
     return <div className="text-center py-10">Collection not found.</div>;
   }
+  const handleImageClick = (url: string) => {
+    setActiveImage(url);
+    setZoomModalOpen(true);
+  };
 
   return (
     <div className="p-6 w-full max-w-6xl mx-auto">
@@ -113,12 +120,21 @@ export default function CollectionPage() {
                 className="rounded-lg shadow-md"
                 placeholder="blur"
                 blurDataURL="/placeholder.png"
+                onClick={() => handleImageClick(image.url)}  // ✅ Open ZoomModal on click
               />
             </div>
           ))}
         </div>
       ) : (
         <div className="text-center text-gray-500">No images in this collection yet.</div>
+      )}
+      {/* ✅ ZoomModal for Images */}
+      {zoomModalOpen && activeImage && (
+        <ZoomModal
+          images={[{ url: activeImage }]}
+          currentIndex={0}
+          onClose={() => setZoomModalOpen(false)}
+        />
       )}
     </div>
   );

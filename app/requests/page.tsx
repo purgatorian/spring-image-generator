@@ -6,6 +6,7 @@ import { Table, TableHead, TableHeader, TableRow, TableBody, TableCell } from "@
 import { Badge } from "@/components/ui/badge";
 import Image from "next/image";
 import ZoomModal from "@/components/ZoomModal";
+import { Loader2 } from "lucide-react";
 
 interface Request {
   id: string;
@@ -66,8 +67,10 @@ export default function RequestsPage() {
         </CardHeader>
         <CardContent>
           {loading ? (
-            <p>Loading...</p>
-          ) : (
+    <div className="text-center py-6 flex items-center justify-center">
+    <Loader2 className="animate-spin w-6 h-6" /> Loading Requests...
+  </div>
+            ) : (
             <Table>
               <TableHeader>
                 <TableRow>
