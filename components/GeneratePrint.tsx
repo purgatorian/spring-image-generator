@@ -56,7 +56,6 @@ const ImageRenderer = ({
 export const GeneratePrint = () => {
   const [batchSkeletons, setBatchSkeletons] = useState([]);
   const [mode, setMode] = useState("text");
-  const [uploadedImage, setUploadedImage] = useState(null);
   const [uploadedImageUrl, setUploadedImageUrl] = useState("");
   const [parameters, setParameters] = useState({
     resolution: "1024x1024",
