@@ -36,8 +36,8 @@ export const GeneratePrint = () => {
     resolution: "1024x1024",
     batchSize: 1,
     denoise: 1,
-    tiling: true,
-    resolutionLocked: true,
+    tiling: true, // ✅ Boolean
+    resolutionLocked: true, // ✅ Boolean
   });
   const [generatedImages, setGeneratedImages] = useState<string[]>([]);
   const [status, setStatus] = useState("Waiting for generation...");
@@ -275,7 +275,7 @@ export const GeneratePrint = () => {
                     <Checkbox
                       checked={parameters.tiling}
                       onCheckedChange={(checked) =>
-                        setParameters((prev) => ({ ...prev, tiling: checked }))
+                        setParameters((prev) => ({ ...prev, tiling: checked === true }))
                       }
                     />
                   </div>
