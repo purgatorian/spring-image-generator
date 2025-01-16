@@ -76,14 +76,18 @@ export const GeneratePrint = () => {
   const [prompt, setPrompt] = useState("");
   const [negativePrompt, setNegativePrompt] = useState("");
 
-  const handleDrop = (acceptedFiles: FileWithPath[]) => {
-    const file = acceptedFiles[0];
-    if (file) {
-      setUploadedImage(
-        Object.assign(file, { preview: URL.createObjectURL(file) })
-      );
-    }
-  };
+// Define the state with proper typing
+const [uploadedImage, setUploadedImage] = useState<FileWithPath & { preview: string } | null>(null);
+
+const handleDrop = (acceptedFiles: FileWithPath[]) => {
+  const file = acceptedFiles[0];
+  if (file) {
+    // Now TypeScript knows uploadedImage can accept this value
+    setUploadedImage(
+      Object.assign(file, { preview: URL.createObjectURL(file) })
+    );
+  }
+};
 
   const handleAddUrlImage = () => {
     if (uploadedImageUrl) {
