@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -37,22 +37,21 @@ const CollectionPopover: React.FC<CollectionPopoverProps> = ({ imageUrl }) => {
   };
 
   // ❌ Error Toast
-  const showErrorToast = (message: string) => {
+  const showErrorToast = useCallback((message: string) => {
     toast({
       title: "Error!",
       description: message,
       variant: "destructive",
     });
-  };
+  }, [toast]);
 
   // ✅ Fetch collections from the API
-  const fetchCollections = async () => {
+  const fetchCollections = useCallback(async () => {
     try {
       const response = await fetch("/api/collections");
       const data = await response.json();
       setCollections(Array.isArray(data) ? data : []);
-
-      // ✅ Check if the image already exists in any collection
+  
       const existingCollections = data.filter((col: Collection) =>
         col.images.some((img) => img.url === imageUrl)
       );
@@ -61,13 +60,13 @@ const CollectionPopover: React.FC<CollectionPopoverProps> = ({ imageUrl }) => {
       console.error("Error fetching collections:", error);
       showErrorToast("Failed to fetch collections.");
     }
-  };
-
+  }, [imageUrl, showErrorToast]);  // ✅ Added showErrorToast
+  
   useEffect(() => {
     if (popoverOpen) {
       fetchCollections();
     }
-  }, [popoverOpen, imageUrl]);
+  }, [popoverOpen, fetchCollections]);  // ✅ No more warning
 
   // ✅ Handle image addition or removal from a collection
   const handleCollectionSelect = async (collectionId: string, checked: boolean) => {

@@ -1,17 +1,7 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
-import {
-  PopoverContent,
-} from "@/components/ui/popover";
-import {
-  X,
-  ChevronLeft,
-  ChevronRight,
-  Grid,
-} from "lucide-react";
-import { Checkbox } from "@/components/ui/checkbox";
-import { useToast } from "@/hooks/use-toast";
+import { X, ChevronLeft, ChevronRight, Grid, Heart } from "lucide-react";
 import DownloadButton from "./DownloadButton";
 import CollectionPopover from "./CollectionPopover";
 import SharePopover from "@/components/SharePopover";
@@ -29,13 +19,52 @@ const ZoomModal: React.FC<ZoomModalProps> = ({
 }) => {
   const [activeIndex, setActiveIndex] = useState(currentIndex);
   const [isTiled, setIsTiled] = useState(false);
-  const [popoverOpen, setPopoverOpen] = useState(false);
-  const [collectionName, setCollectionName] = useState("");
-  const [collections, setCollections] = useState<Collection[]>([]);
-  const [selectedCollections, setSelectedCollections] = useState<string[]>([]);
+  const [isFavorite, setIsFavorite] = useState(false);
 
   const iconButtonClass =
     "bg-gray-200 dark:bg-gray-800 p-2 rounded-full hover:bg-gray-300 dark:hover:bg-gray-700";
+    interface Image {
+      id: string;
+      url: string;
+    }
+    
+    interface Collection {
+      id: string;
+      name: string;
+      images: Image[];
+    }
+  // ✅ Fetch if the current image is in any collection
+  const checkIfFavorite = useCallback(async (imageUrl: string) => {
+    try {
+      const response = await fetch("/api/collections");
+      const collections: Collection[] = await response.json();
+
+      const isInCollection = collections.some((collection) =>
+        collection.images.some((img) => img.url === imageUrl)
+      );
+
+      setIsFavorite(isInCollection);
+    } catch (error) {
+      console.error("Error checking collections:", error);
+    }
+  }, []);  // ✅ No dependencies because nothing dynamic is used inside
+
+  // ✅ Include checkIfFavorite in dependencies
+  useEffect(() => {
+    checkIfFavorite(images[activeIndex].url);
+  }, [activeIndex, images, checkIfFavorite]);
+
+  // ✅ Navigate to the previous image
+  const handlePrev = () => {
+    setActiveIndex((prevIndex) =>
+      (prevIndex - 1 + images.length) % images.length
+    );
+  };
+
+  // ✅ Navigate to the next image
+  const handleNext = () => {
+    setActiveIndex((prevIndex) => (prevIndex + 1) % images.length);
+  };
 
   return (
     <div
@@ -45,17 +74,25 @@ const ZoomModal: React.FC<ZoomModalProps> = ({
     >
       <div className="relative">
         {images.length > 1 && (
-          <Button
-            variant="ghost"
-            onClick={() =>
-              setActiveIndex(
-                (prevIndex) => (prevIndex - 1 + images.length) % images.length
-              )
-            }
-            className={`absolute left-2 top-1/2 transform -translate-y-1/2 z-10 ${iconButtonClass}`}
-          >
-            <ChevronLeft className="w-6 h-6 text-black dark:text-white" />
-          </Button>
+          <>
+            {/* ✅ Left Chevron */}
+            <Button
+              variant="ghost"
+              onClick={handlePrev}
+              className={`absolute left-2 top-1/2 transform -translate-y-1/2 z-10 ${iconButtonClass}`}
+            >
+              <ChevronLeft className="w-6 h-6 text-black dark:text-white" />
+            </Button>
+
+            {/* ✅ Right Chevron */}
+            <Button
+              variant="ghost"
+              onClick={handleNext}
+              className={`absolute right-2 top-1/2 transform -translate-y-1/2 z-10 ${iconButtonClass}`}
+            >
+              <ChevronRight className="w-6 h-6 text-black dark:text-white" />
+            </Button>
+          </>
         )}
 
         <div
@@ -85,6 +122,7 @@ const ZoomModal: React.FC<ZoomModalProps> = ({
           )}
         </div>
 
+        {/* ✅ Close Button */}
         <Button
           variant="ghost"
           onClick={onClose}
@@ -93,6 +131,7 @@ const ZoomModal: React.FC<ZoomModalProps> = ({
           <X className="w-6 h-6 text-black dark:text-white" />
         </Button>
 
+        {/* ✅ Action Buttons */}
         <div className="absolute top-2 right-2 flex space-x-2">
           <DownloadButton
             imageUrl={images[activeIndex].url}
@@ -105,6 +144,16 @@ const ZoomModal: React.FC<ZoomModalProps> = ({
           >
             <Grid className="w-6 h-6 text-black dark:text-white" />
           </Button>
+
+          {/* ✅ Heart Icon reflecting favorite status */}
+          <Button variant="ghost" className={iconButtonClass}>
+            <Heart
+              className={`w-6 h-6 ${
+                isFavorite ? "fill-red-500 text-red-500" : "text-black dark:text-white"
+              }`}
+            />
+          </Button>
+
           <CollectionPopover imageUrl={images[activeIndex].url} />
           <SharePopover imageUrl={images[activeIndex].url} />
         </div>

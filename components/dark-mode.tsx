@@ -10,7 +10,7 @@ interface ModeToggleProps {
 }
 
 export function ModeToggle({ hideIcons }: ModeToggleProps) {
-  const { theme, setTheme, resolvedTheme } = useTheme();
+  const {  setTheme, resolvedTheme } = useTheme();
   const [mounted, setMounted] = React.useState(false);
 
   React.useEffect(() => {

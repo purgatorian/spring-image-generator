@@ -5,28 +5,42 @@ import { getAuth } from "@clerk/nextjs/server";
 export async function DELETE(req: NextRequest, { params }: { params: { id: string } }) {
   try {
     const { userId } = getAuth(req);
-    const { imageId } = await req.json();
-    const { id } = params;
+    const { imageUrl } = await req.json();  // Changed from imageId to imageUrl for consistency
+    const { id } = params;  // ✅ Correctly extract collection ID
 
     if (!userId) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    // Check if the image belongs to the collection and the user
-    const image = await prisma.image.findUnique({
-      where: { id: imageId },
-      include: {
-        collection: true,
-      },
-    });
-
-    if (!image || image.collection.userId !== userId || image.collectionId !== id) {
-      return NextResponse.json({ error: "Image not found or unauthorized" }, { status: 404 });
+    if (!imageUrl) {
+      return NextResponse.json({ error: "Image URL is required." }, { status: 400 });
     }
 
-    // Delete the image
-    await prisma.image.delete({
-      where: { id: imageId },
+    // ✅ Verify the collection belongs to the user
+    const collection = await prisma.collection.findUnique({
+      where: { id, userId },
+      include: { images: true },
+    });
+
+    if (!collection) {
+      return NextResponse.json({ error: "Collection not found or unauthorized" }, { status: 404 });
+    }
+
+    // ✅ Find the image in the collection
+    const image = collection.images.find((img) => img.url === imageUrl);
+
+    if (!image) {
+      return NextResponse.json({ error: "Image not found in this collection." }, { status: 404 });
+    }
+
+    // ✅ Disconnect the image from the collection (don't delete it globally)
+    await prisma.collection.update({
+      where: { id },
+      data: {
+        images: {
+          disconnect: { id: image.id },
+        },
+      },
     });
 
     return NextResponse.json({ message: "Image removed from collection." });

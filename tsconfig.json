@@ -13,6 +13,10 @@
     "isolatedModules": true,
     "jsx": "preserve",
     "incremental": true,
+    "noUnusedLocals": true,      // ❗ Error for unused variables
+    "noUnusedParameters": true,  // ❗ Error for unused function parameters
+    "noImplicitAny": true,       // ❗ Error for implicit 'any' types
+    "forceConsistentCasingInFileNames": true,
     "plugins": [
       {
         "name": "next"

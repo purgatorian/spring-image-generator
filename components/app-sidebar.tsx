@@ -1,5 +1,4 @@
 "use client";
-import React, { useState } from "react";
 import Image from "next/image";
 import {
   Sidebar,
@@ -15,7 +14,7 @@ import {
   SidebarFooter,
 } from "@/components/ui/sidebar";
 import { ModeToggle } from "@/components/dark-mode";
-import { ClerkProvider, SignedIn, UserButton } from "@clerk/nextjs";
+import { SignedIn, UserButton } from "@clerk/nextjs";
 import {
   HoverCard,
   HoverCardTrigger,
@@ -25,7 +24,6 @@ import {
   Paintbrush,
   Shirt,
   PersonStanding,
-  SquarePen,
   Sparkles,
   Wrench,
   FolderOpen,
@@ -81,9 +79,8 @@ const userItems = [
   },
 ];
 
-export function AppSidebar({ onOptionSelect }) {
-  const { state, setOpen, isMobile } = useSidebar();
-  const [activeComponent, setActiveComponent] = useState("Generate Print");
+export function AppSidebar({ }) {
+  const { state  } = useSidebar();
 
   return (
     <Sidebar collapsible="icon">
