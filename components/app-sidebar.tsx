@@ -1,5 +1,7 @@
 "use client";
 import Image from "next/image";
+import { usePathname } from "next/navigation";
+
 import {
   Sidebar,
   useSidebar,
@@ -30,6 +32,7 @@ import {
   BookOpen,
 } from "lucide-react";
 import Link from "next/link";
+
 
 const items = [
   {
@@ -81,7 +84,7 @@ const userItems = [
 
 export function AppSidebar({ }) {
   const { state  } = useSidebar();
-
+  const pathname = usePathname();
   return (
     <Sidebar collapsible="icon">
       <SidebarHeader>
@@ -115,16 +118,18 @@ export function AppSidebar({ }) {
           <SidebarGroupContent>
             <SidebarMenu>
               {items.map((item) => (
-                <SidebarMenuItem key={item.title}>
+                <SidebarMenuItem key={item.title} className={`${pathname === item.href ? 'bg-gray-200 dark:bg-gray-700' : ''}`}>
                   <HoverCard>
                     <HoverCardTrigger asChild>
                       <SidebarMenuButton asChild>
-                        <Link href={item.href}>
-                          <div className="flex items-center gap-2">
-                            <item.icon className="w-5 h-5" />
-                            {state !== "collapsed" && <span>{item.title}</span>}
-                          </div>
-                        </Link>
+                      <Link href={item.href}>
+                        <div
+                          className={`flex items-center gap-2 px-2 py-1 rounded`}
+                        >
+                          <item.icon className="w-5 h-5" />
+                          {state !== "collapsed" && <span>{item.title}</span>}
+                        </div>
+                      </Link>
                       </SidebarMenuButton>
                     </HoverCardTrigger>
                     <HoverCardContent>
@@ -143,16 +148,18 @@ export function AppSidebar({ }) {
           <SidebarGroupContent>
             <SidebarMenu>
               {userItems.map((item) => (
-                <SidebarMenuItem key={item.title}>
+                <SidebarMenuItem key={item.title} className={`${pathname === item.href ? 'bg-gray-200 dark:bg-gray-700' : ''}`}>
                   <HoverCard>
                     <HoverCardTrigger asChild>
                       <SidebarMenuButton asChild>
-                        <Link href={item.href}>
-                          <div className="flex items-center gap-2">
-                            <item.icon className="w-5 h-5" />
-                            {state !== "collapsed" && <span>{item.title}</span>}
-                          </div>
-                        </Link>
+                      <Link href={item.href}>
+  <div
+    className={`flex items-center gap-2 px-2 py-1 rounded`}
+  >
+    <item.icon className="w-5 h-5" />
+    {state !== "collapsed" && <span>{item.title}</span>}
+  </div>
+</Link>
                       </SidebarMenuButton>
                     </HoverCardTrigger>
                     <HoverCardContent>
