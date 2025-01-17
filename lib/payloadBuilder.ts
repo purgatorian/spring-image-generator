@@ -9,6 +9,12 @@ interface GenerateParameters {
   seed?: number;
 }
 
+// ✅ Random Seed Generator (64-bit integer)
+function generateRandomSeed(): number {
+  return Math.floor(Math.random() * Number.MAX_SAFE_INTEGER);
+}
+
+// 📦 Text Mode Payload
 export function buildTextModePayload(
   prompt: string,
   negativePrompt: string,
@@ -26,7 +32,7 @@ export function buildTextModePayload(
       },
       "d9ffb92f3b894f8a": {
         title: "Width",
-        value: parameters.width ?? 1024, // ✅ Safer with nullish coalescing
+        value: parameters.width ?? 1024,
       },
       "ac9be93bce0b142a": {
         title: "Height",
@@ -42,44 +48,43 @@ export function buildTextModePayload(
       },
       "bdf13c4d02b289e4": {
         title: "InstaSD API Input - Seed",
-        value: parameters.seed ?? 862135533978314, // ✅ Optional seed support
+        value: parameters.seed ?? generateRandomSeed(),  // ✅ Use random seed
       },
     },
   };
 }
 
-export function buildImageModePayload
-  (
-    imageUrl: string,
-    parameters: GenerateParameters
-  ) 
-  {
-    return {
-      inputs: {
-        "2db6b4bc5c088768": {
-          title: "Width",
-          value: parameters.width ?? 1024,
-        },
-        "9336b9b70244786b": {
-          title: "Height",
-          value: parameters.height ?? 1024,
-        },
-        "e7d548ea7e3c5e27": {
-          title: "Batch Size",
-          value: parameters.batchSize ?? 1,
-        },
-        "b3d3b23a2e6f162a": {
-          title: "Image Url",
-          value: imageUrl,
-        },
-        "c2a233be477e8ae5": {
-          title: "Tiling",
-          value: parameters.tiling ? "enable" : "disable",
-        },
-        "ce20c1748ebbca11": {
-          title: "Seed",
-          value: parameters.seed ?? 604814176594449,
-        },
+// 📦 Image Mode Payload
+export function buildImageModePayload(
+  imageUrl: string,
+  parameters: GenerateParameters
+) {
+  return {
+    inputs: {
+      "2db6b4bc5c088768": {
+        title: "Width",
+        value: parameters.width ?? 1024,
       },
-    };
-  }
+      "9336b9b70244786b": {
+        title: "Height",
+        value: parameters.height ?? 1024,
+      },
+      "e7d548ea7e3c5e27": {
+        title: "Batch Size",
+        value: parameters.batchSize ?? 1,
+      },
+      "b3d3b23a2e6f162a": {
+        title: "Image Url",
+        value: imageUrl,
+      },
+      "c2a233be477e8ae5": {
+        title: "Tiling",
+        value: parameters.tiling ? "enable" : "disable",
+      },
+      "ce20c1748ebbca11": {
+        title: "Seed",
+        value: parameters.seed ?? generateRandomSeed(),  // ✅ Use random seed
+      },
+    },
+  };
+}

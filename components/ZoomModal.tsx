@@ -110,22 +110,30 @@ const ZoomModal: React.FC<ZoomModalProps> = ({
           {isTiled ? (
             Array.from({ length: 9 }).map((_, idx) => (
               <Image
-                key={idx}
-                src={images[activeIndex].url}
-                alt={`Tiled Image ${activeIndex + 1}`}
-                width={250}
-                height={250}
-                className="rounded m-0"
-              />
+              key={idx}
+              src={images[activeIndex].url}
+              alt={`Tiled Image ${activeIndex + 1}`}
+              width={250}
+              height={250}
+              className="rounded m-0 object-contain"
+              style={{
+                maxHeight: "90vh",  // ✅ Limits image height for better spacing
+                maxWidth: "90vw",   // ✅ Responsive width
+              }}
+            />
             ))
           ) : (
             <Image
-              src={images[activeIndex].url}
-              alt={`Zoomed Image ${activeIndex + 1}`}
-              width={800}
-              height={800}
-              className="rounded"
-            />
+            src={images[activeIndex].url}
+            alt={`Zoomed Image ${activeIndex + 1}`}
+            width={1024}
+            height={1024}
+            className="rounded object-contain"
+            style={{
+              maxHeight: "90vh",  // ✅ Limits image height for better spacing
+              maxWidth: "90vw",   // ✅ Responsive width
+            }}
+          />
           )}
         </div>
 
@@ -133,8 +141,8 @@ const ZoomModal: React.FC<ZoomModalProps> = ({
         <Button
           variant="ghost"
           onClick={onClose}
-          className={`absolute top-2 left-2 ${iconButtonClass}`}
-        >
+          className={`absolute top-4 left-4 ${iconButtonClass}`}
+          >
           <X className="w-6 h-6 text-black dark:text-white" />
         </Button>
 

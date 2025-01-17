@@ -21,6 +21,7 @@ model Request {
   userId      String
   taskId      String   @unique
   status      String
+  mode        String   @default("text")
   imageUrls   String   @default("[]") // Store as JSON string
   videoUrls   String   @default("[]") // Store as JSON string
   cost        Float

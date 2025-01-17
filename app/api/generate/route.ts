@@ -63,6 +63,7 @@ export async function POST(req: NextRequest) {
         data: {
           userId,
           taskId: task_id,
+          mode: apiMode,
           status: "CREATED",
           cost: 0, // might be updated later
         },
@@ -115,7 +116,8 @@ export async function GET(req: NextRequest) {
     if (!endpoint) {
       return NextResponse.json({ error: "Unknown mode" }, { status: 400 });
     }
-
+    console.log("Using endpoint:", endpoint);
+    console.log("Using task ID:", taskId);
     // 1. Call InstaSD to check the status
     const statusResponse = await axios.get(`${endpoint}/task_status/${taskId}`, {
       headers: {
@@ -139,6 +141,7 @@ export async function GET(req: NextRequest) {
       where: { taskId },
       data: {
         status,
+        mode: apiMode,
         imageUrls: JSON.stringify(image_urls || []),
         videoUrls: JSON.stringify(video_urls || []),
         cost: cost || 0,
