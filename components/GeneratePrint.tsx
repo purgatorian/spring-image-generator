@@ -130,7 +130,6 @@ const handleGenerate = async () => {
   } else if (mode === "image" && uploadedImageUrl) {
     payload = buildImageModePayload(uploadedImageUrl, parameters);
   }
-
   try {
     const res = await fetch("/api/generate", {
       method: "POST",
@@ -177,7 +176,10 @@ const handleGenerate = async () => {
             <span className="text-sm md:text-base">Text</span>
             <Switch
               checked={mode === "image"}
-              onCheckedChange={(checked) => setMode(checked ? "image" : "text")}
+              onCheckedChange={(checked) => {
+                const newMode = checked ? "image" : "text";
+                setMode(newMode);
+              }}
             />
             <span className="text-sm md:text-base">Image</span>
           </div>

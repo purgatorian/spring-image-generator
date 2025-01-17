@@ -10,9 +10,6 @@ export async function PUT(req: NextRequest) {
 
     // ✅ Extract the collection ID from the URL
     const id = req.nextUrl.pathname.split("/")[3];
-
-    console.log(id);
-    console.log(name);
     if (!userId) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
@@ -90,7 +87,6 @@ export async function GET(req: NextRequest) {
 
     // ✅ Extract the collection ID from the URL
     const id = req.nextUrl.pathname.split("/")[3];
-    console.log(id);
     if (!id) {
       return NextResponse.json({ error: "Invalid collection ID." }, { status: 400 });
     }

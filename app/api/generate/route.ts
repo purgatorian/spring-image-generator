@@ -18,10 +18,9 @@ export async function POST(req: NextRequest) {
 
     // Grab apiMode, payload from client
     const { apiMode, payload } = await req.json();
-
+    
     // Look up the correct endpoint + token
-    const { endpoint, authToken } = instaSDConfig[apiMode as "text" | "image"] || {};
-
+    const { endpoint, authToken } = instaSDConfig[apiMode as keyof typeof instaSDConfig] || {};
     if (!endpoint || !payload) {
       console.error("❌ Missing endpoint or payload:", { endpoint, payload });
       return NextResponse.json(
@@ -108,7 +107,6 @@ export async function GET(req: NextRequest) {
     const { searchParams } = new URL(req.url);
     const apiMode = searchParams.get("apiMode");
     const taskId = searchParams.get("task_id");
-    console.log("Checking task status:", { apiMode, taskId });
     if (!apiMode || !taskId) {
       return NextResponse.json({ error: "Missing apiMode or task_id" }, { status: 400 });
     }
@@ -116,8 +114,6 @@ export async function GET(req: NextRequest) {
     if (!endpoint) {
       return NextResponse.json({ error: "Unknown mode" }, { status: 400 });
     }
-    console.log("Using endpoint:", endpoint);
-    console.log("Using task ID:", taskId);
     // 1. Call InstaSD to check the status
     const statusResponse = await axios.get(`${endpoint}/task_status/${taskId}`, {
       headers: {
@@ -133,8 +129,6 @@ export async function GET(req: NextRequest) {
       completed_steps,
       cost,
     } = statusResponse.data;
-
-    console.log(completed_steps)
 
     // 2. Update the DB with the new status
     await prisma.request.update({

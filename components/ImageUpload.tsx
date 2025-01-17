@@ -110,7 +110,13 @@ export default function ImageUploadSection({ onUploadComplete }: ImageUploadSect
 
     return (
       <div className="relative inline-block">
-        <Image src={imageSrc} alt="Preview" width={128} height={128} className="object-cover rounded" />
+        <Image
+          src={imageSrc}
+          alt="Preview"
+          width={uploadedImage?.width || 128}
+          height={uploadedImage?.height || 128}
+          className="object-cover rounded"
+        />   
         {loading && (
           <div className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center rounded">
             <span className="text-white">Uploading...</span>

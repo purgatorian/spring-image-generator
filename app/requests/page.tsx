@@ -89,7 +89,6 @@ export default function RequestsPage() {
       }
 
       await fetchRequests();  // Refresh UI
-      console.log(`Request ${taskId} refreshed.`);
     } catch (error) {
       console.error("Error updating request:", error);
     } finally {

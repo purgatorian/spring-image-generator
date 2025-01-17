@@ -8,4 +8,12 @@ export const instaSDConfig = {
       endpoint: process.env.NEXT_PUBLIC_INSTASD_IMAGE_ENDPOINT ?? "",
       authToken: process.env.NEXT_PUBLIC_INSTASD_IMAGE_AUTH_TOKEN ?? "",
     },
+    clothing: {
+      endpoint: process.env.NEXT_PUBLIC_INSTASD_CLOTHING_ENDPOINT ?? "",
+      authToken: process.env.NEXT_PUBLIC_INSTASD_CLOTHING_AUTH_TOKEN ?? "",
+    },
+    model: {
+      endpoint: process.env.NEXT_PUBLIC_INSTASD_MODEL_ENDPOINT ?? "",
+      authToken: process.env.NEXT_PUBLIC_INSTASD_MODEL_AUTH_TOKEN ?? "",
+    },
   };
