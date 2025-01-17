@@ -113,8 +113,8 @@ export default function ImageUploadSection({ onUploadComplete }: ImageUploadSect
         <Image
           src={imageSrc}
           alt="Preview"
-          width={uploadedImage?.width || 128}
-          height={uploadedImage?.height || 128}
+          width={128}
+          height={192}
           className="object-cover rounded"
         />   
         {loading && (
