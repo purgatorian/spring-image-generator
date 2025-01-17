@@ -31,7 +31,7 @@ export async function POST(req: NextRequest) {
     }
 
     // ✅ Check if the image already exists in the collection
-    const imageExists = collection.images.some((img) => img.url === imageUrl);
+    const imageExists = collection.images.some((img: {url: string}) => img.url === imageUrl);
 
     if (imageExists) {
       return NextResponse.json({ message: "Image already exists in the collection." });

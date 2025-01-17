@@ -29,7 +29,7 @@ export async function DELETE(req: NextRequest) {
     }
 
     // ✅ Find the image in the collection
-    const image = collection.images.find((img) => img.url === imageUrl);
+    const image = collection.images.find((img: { url: string }) => img.url === imageUrl);
 
     if (!image) {
       return NextResponse.json({ error: "Image not found in this collection." }, { status: 404 });
