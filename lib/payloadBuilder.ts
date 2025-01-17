@@ -1,7 +1,7 @@
 // lib/payloadBuilder.ts
 
 // ✅ Define a specific interface for the parameters
-interface TextModeParameters {
+interface GenerateParameters {
   width?: number;
   height?: number;
   batchSize?: number;
@@ -12,7 +12,7 @@ interface TextModeParameters {
 export function buildTextModePayload(
   prompt: string,
   negativePrompt: string,
-  parameters: TextModeParameters
+  parameters: GenerateParameters
 ) {
   return {
     inputs: {
@@ -47,3 +47,39 @@ export function buildTextModePayload(
     },
   };
 }
+
+export function buildImageModePayload
+  (
+    imageUrl: string,
+    parameters: GenerateParameters
+  ) 
+  {
+    return {
+      inputs: {
+        "2db6b4bc5c088768": {
+          title: "Width",
+          value: parameters.width ?? 1024,
+        },
+        "9336b9b70244786b": {
+          title: "Height",
+          value: parameters.height ?? 1024,
+        },
+        "e7d548ea7e3c5e27": {
+          title: "Batch Size",
+          value: parameters.batchSize ?? 1,
+        },
+        "b3d3b23a2e6f162a": {
+          title: "Image Url",
+          value: imageUrl,
+        },
+        "c2a233be477e8ae5": {
+          title: "Tiling",
+          value: parameters.tiling ? "enable" : "disable",
+        },
+        "ce20c1748ebbca11": {
+          title: "Seed",
+          value: parameters.seed ?? 604814176594449,
+        },
+      },
+    };
+  }

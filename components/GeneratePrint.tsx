@@ -1,7 +1,7 @@
-//app/components/GeneratePrint.tsx
+// app/components/GeneratePrint.tsx
 "use client";
-import * as React from "react";
-import { useState } from "react";
+
+import React, { useState, useEffect } from "react";
 import Image from "next/image";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
@@ -12,9 +12,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Progress } from "@/components/ui/progress";
 import ZoomModal from "@/components/ZoomModal";
-import { buildTextModePayload } from "@/lib/payloadBuilder";
-import { useTaskStatus } from "@/app/api/hooks/useTaskStatus";
-import { Lock, LockOpen} from "lucide-react";
+import ImageUploadSection from "@/components/ImageUpload";
 import {
   Card,
   CardContent,
@@ -27,100 +25,142 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import ImageUploadSection from "@/components/ImageUpload";
+import { Lock, LockOpen } from "lucide-react";
+import {
+  buildTextModePayload,
+  buildImageModePayload
+} from "@/lib/payloadBuilder";
+
 
 export const GeneratePrint = () => {
-  const [batchSkeletons, setBatchSkeletons] = useState([]);
-  const [mode, setMode] = useState("text");
+  const [batchSkeletons, setBatchSkeletons] = useState<string[]>([]);
+  const [mode, setMode] = useState<"text" | "image">("text");
   const [parameters, setParameters] = useState({
     resolution: "1024x1024",
     batchSize: 1,
     denoise: 1,
-    tiling: true, // ✅ Boolean
-    resolutionLocked: true, // ✅ Boolean
+    tiling: true,
+    resolutionLocked: true,
   });
   const [generatedImages, setGeneratedImages] = useState<string[]>([]);
   const [status, setStatus] = useState("Waiting for generation...");
-  const [runId, setRunId] = useState<string>(""); // Initialize as an empty string
+  const [runId, setRunId] = useState<string>("");
   const [progress, setProgress] = useState(0);
+  const [displayedProgress, setDisplayedProgress] = useState(0);
   const [popoverOpen, setPopoverOpen] = useState(false);
   const [zoomModalOpen, setZoomModalOpen] = useState(false);
-  const [activeImageIndex, setActiveImageIndex] = useState(0); // Default to the first image
+  const [activeImageIndex, setActiveImageIndex] = useState(0);
   const [isGenerating, setIsGenerating] = useState(false);
   const [prompt, setPrompt] = useState("");
   const [negativePrompt, setNegativePrompt] = useState("");
   const [uploadedImageUrl, setUploadedImageUrl] = useState<string | null>(null);
-
-
-  // Modified handleGenerate function to use Picallow
-  const handleGenerate = async () => {
-    setIsGenerating(true);
-    setGeneratedImages([]);
-    setProgress(0);
-    setBatchSkeletons(Array.from({ length: parameters.batchSize }));
-  
-    let payload;
-  
-    if (mode === "text") {
-      // ✅ Build the payload and log it
-      const builtPayload = buildTextModePayload(prompt.trim(), negativePrompt.trim(), parameters);  
-      payload = {
-        apiEndpoint: "https://api.instasd.com/api_endpoints/ma5o39at1e9gnd",
-        payload: builtPayload,
-      };
-    } else if (mode === "image" && uploadedImageUrl) {
-      payload = {
-        apiEndpoint: "https://api.instasd.com/api_endpoints/your_image_endpoint",
-        payload: {
-          mode: "image",
-          uploadedImage: uploadedImageUrl,
-          ...parameters,
-          tiling: parameters.tiling ? "enable" : "disable",
-        },
-      };
+  // Smooth progress bar update
+  useEffect(() => {
+    if (progress === 100) {
+      setDisplayedProgress(100);
+      return;
     }
-  
-    try {
-      const response = await fetch("/api/generate", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      });
-  
-      if (!response.ok) {
-        const errorDetails = await response.json();
-        console.error("❌ Detailed Error Response:", errorDetails);
-        throw new Error(`Failed to queue generation: ${errorDetails.error || response.statusText}`);
+    if (displayedProgress < progress) {
+      const difference = progress - displayedProgress;
+      const increment = Math.max(1, Math.ceil(difference / 10));
+      const delay = Math.max(50, 500 - difference * 5); // Faster when far, slower when close
+      const timeout = setTimeout(() => {
+        setDisplayedProgress((prev) => Math.min(prev + increment, progress));
+      }, delay);
+      return () => clearTimeout(timeout);
+    }
+  }, [progress, displayedProgress]);
+  // 1. Poll the server for status if we have a runId
+  useEffect(() => {
+    if (!runId) return;
+    const intervalId = setInterval(async () => {
+      try {
+        // Query our own route:
+        const res = await fetch(`/api/generate?task_id=${runId}&apiMode=${mode}`);
+        if (!res.ok) {
+          throw new Error("Failed to fetch task status");
+        }
+        const data = await res.json();
+
+        if (data.error) {
+          console.error("Error from server route:", data.error);
+          setStatus(`Error: ${data.error}`);
+          clearInterval(intervalId);
+          return;
+        }
+
+        // Update progress, status, images, etc.
+        setProgress(data.progress);
+        setStatus(data.status);
+
+        // If completed, show the images immediately
+        if (data.status === "COMPLETED") {
+          setIsGenerating(false);
+
+          if (data.image_urls?.length) {
+            setGeneratedImages(data.image_urls);
+          }
+          setStatus("Completed");
+          clearInterval(intervalId);
+        }
+      } catch (err) {
+        console.error("Polling error:", err);
+        setStatus("Error checking status");
+        clearInterval(intervalId);
       }
-  
-      const { task_id } = await response.json();
-      setRunId(task_id);
-      setStatus("Queued");
-    } catch (error: unknown) {
-      console.error("❌ Error in handleGenerate:", error);
-    
-      if (error instanceof Error) {
-        setStatus(`Error while queuing generation: ${error.message}`);
-      } else {
-        setStatus("An unknown error occurred while queuing generation.");
-      }    
-    } finally {
-      setIsGenerating(false);
+    }, 5000);
+
+    // Cleanup
+    return () => clearInterval(intervalId);
+  }, [runId, mode]);
+
+// 2. Handle Generate
+const handleGenerate = async () => {
+  setIsGenerating(true);
+  setGeneratedImages([]);
+  setProgress(0);
+  setDisplayedProgress(0);
+  setBatchSkeletons(Array.from({ length: parameters.batchSize }));
+  setStatus("Queuing generation...");
+
+  let payload;
+
+  if (mode === "text") {
+    payload = buildTextModePayload(prompt.trim(), negativePrompt.trim(), parameters);
+  } else if (mode === "image" && uploadedImageUrl) {
+    payload = buildImageModePayload(uploadedImageUrl, parameters);
+  }
+
+  try {
+    const res = await fetch("/api/generate", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ apiMode: mode, payload }),
+    });
+
+    if (!res.ok) {
+      const errorDetails = await res.json();
+      console.error("❌ Detailed Error Response:", errorDetails);
+      throw new Error(`Failed to queue generation: ${errorDetails.error || res.statusText}`);
     }
-  };  
 
-  useTaskStatus({
-    taskId: runId,
-    apiEndpoint: "https://api.instasd.com/api_endpoints/ma5o39at1e9gnd",
-    onProgressUpdate: (progress) => setProgress(progress),
-    onComplete: (imageUrls) => {
-      setIsGenerating(false);
-      setGeneratedImages(imageUrls);
-      setStatus("Completed");
-    },
-    onError: (error) => setStatus(error),
-  });  
+    const { task_id } = await res.json();
+    setRunId(task_id);
+    setStatus("Queued");
+  } catch (error: unknown) {
+    console.error("❌ Error in handleGenerate:", error);
+    if (error instanceof Error) {
+      setStatus(`Error while queuing generation: ${error.message}`);
+    } else {
+      setStatus("An unknown error occurred while queuing generation.");
+    }
+  } finally {
 
+  }
+};
+
+
+  // 3. UI
   return (
     <div className="flex flex-col lg:flex-row gap-6 p-4 md:p-8">
       {/* Main Card */}
@@ -144,15 +184,14 @@ export const GeneratePrint = () => {
 
           {/* Input Section */}
           {mode === "text" ? (
-            <div className="space-y-4">
+            <>
               <Textarea
-                placeholder="Describe in detail what the print should look like..."
+                placeholder="Describe in detail..."
                 rows={4}
                 className="w-full"
                 value={prompt}
                 onChange={(e) => setPrompt(e.target.value)}
               />
-
               <Textarea
                 placeholder="Negative prompts (optional)..."
                 rows={3}
@@ -160,14 +199,12 @@ export const GeneratePrint = () => {
                 value={negativePrompt}
                 onChange={(e) => setNegativePrompt(e.target.value)}
               />
-            </div>
+            </>
           ) : (
-            <div className="space-y-6">   
-              <ImageUploadSection onUploadComplete={(url) => setUploadedImageUrl(url)} />
-            </div>
+            <ImageUploadSection onUploadComplete={(url) => setUploadedImageUrl(url)} />
           )}
 
-          {/* Generate Button and Advanced Parameters */}
+          {/* Generate & Advanced Params */}
           <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-4">
             <Popover open={popoverOpen} onOpenChange={setPopoverOpen}>
               <PopoverTrigger asChild>
@@ -176,8 +213,9 @@ export const GeneratePrint = () => {
                 </Button>
               </PopoverTrigger>
               <PopoverContent className="w-full md:w-[350px] space-y-4 p-4">
-                {/* Advanced Parameters Form */}
+                {/* Advanced Form */}
                 <div className="space-y-4">
+                  {/* Resolution */}
                   <div className="space-y-2">
                     <div className="flex items-center justify-between">
                       <label className="font-medium">Resolution:</label>
@@ -212,15 +250,11 @@ export const GeneratePrint = () => {
                             ...prev,
                             resolution: parameters.resolutionLocked
                               ? `${e.target.value}x${e.target.value}`
-                              : `${e.target.value}x${
-                                  prev.resolution.split("x")[1]
-                                }`,
+                              : `${e.target.value}x${prev.resolution.split("x")[1]}`,
                           }))
                         }
                       />
-                      <span className="text-center text-gray-500 font-medium">
-                        X
-                      </span>
+                      <span className="text-center text-gray-500 font-medium">X</span>
                       <Input
                         type="number"
                         placeholder="Height"
@@ -231,14 +265,14 @@ export const GeneratePrint = () => {
                             ...prev,
                             resolution: parameters.resolutionLocked
                               ? `${e.target.value}x${e.target.value}`
-                              : `${prev.resolution.split("x")[0]}x${
-                                  e.target.value
-                                }`,
+                              : `${prev.resolution.split("x")[0]}x${e.target.value}`,
                           }))
                         }
                       />
                     </div>
                   </div>
+
+                  {/* Batch Size */}
                   <div className="flex items-center justify-between">
                     <label>Batch Size:</label>
                     <Input
@@ -254,6 +288,8 @@ export const GeneratePrint = () => {
                       className="w-full"
                     />
                   </div>
+
+                  {/* Denoise */}
                   <div className="flex items-center justify-between">
                     <label>Denoise:</label>
                     <Slider
@@ -269,9 +305,10 @@ export const GeneratePrint = () => {
                       className="w-full"
                     />
                   </div>
-                  <div className="flex items-center justify-items-start gap-2">
-                    <label>Enable Tiling</label>
 
+                  {/* Tiling */}
+                  <div className="flex items-center gap-2">
+                    <label>Enable Tiling</label>
                     <Checkbox
                       checked={parameters.tiling}
                       onCheckedChange={(checked) =>
@@ -285,7 +322,7 @@ export const GeneratePrint = () => {
             <Button
               onClick={handleGenerate}
               className="h-12 w-full md:w-auto flex items-center justify-center"
-              disabled={isGenerating} // Disable while loading
+              disabled={isGenerating}
             >
               {isGenerating ? (
                 <svg
@@ -315,42 +352,40 @@ export const GeneratePrint = () => {
           </div>
         </CardContent>
       </Card>
+
+      {/* Results Card */}
       <Card className="w-full xl:w-1/2 p-4 md:p-6 space-y-4">
         <CardHeader>
           <CardTitle className="text-lg md:text-xl">Generated Images</CardTitle>
 
           {runId && (
             <div className="w-full mt-2">
-              <p className="text-sm text-gray-600 mb-1">{status}</p>{" "}
-              {/* Status above progress bar */}
-              <Progress value={progress} className="w-full" />
-              <p className="text-sm text-gray-600 text-right mt-1">
-                {progress.toFixed(0)}%
-              </p>{" "}
-              {/* % below progress bar */}
+              <p className="text-sm text-gray-600 mb-1">{status}</p>
+              <Progress value={displayedProgress} className="w-full transition-all duration-1500 ease-out" />
+              <p className="text-sm text-gray-600 text-right mt-1">{displayedProgress.toFixed(0)}%</p>
             </div>
           )}
         </CardHeader>
         <CardContent className="flex flex-wrap gap-4 justify-center">
-          {runId &&
-            generatedImages.length === 0 &&
+          {runId && generatedImages.length === 0 &&
             batchSkeletons.map((_, index) => (
               <Skeleton key={index} className="w-32 h-32 rounded" />
-            ))}
+            ))
+          }
 
           {generatedImages.map((imageUrl, index) => (
             <div
               key={index}
               className="relative cursor-pointer"
+              style={{ width: "100%", maxWidth: "200px", aspectRatio: "1 / 1" }}
               onClick={() => {
                 setZoomModalOpen(true);
                 setActiveImageIndex(index);
               }}
-              style={{ width: "100%", maxWidth: "200px", aspectRatio: "1 / 1" }}
             >
               <Image
-                src={imageUrl} // Using the image URL directly
-                alt={`Generated Image ${index + 1}`}
+                src={imageUrl}
+                alt={`Generated ${index + 1}`}
                 width={200}
                 height={200}
                 className="rounded object-contain"
@@ -360,10 +395,10 @@ export const GeneratePrint = () => {
         </CardContent>
       </Card>
 
-      {/* ZoomModal */}
+      {/* Zoom Modal */}
       {zoomModalOpen && (
         <ZoomModal
-          images={generatedImages.map((url) => ({ url }))} // Wrap URLs in objects
+          images={generatedImages.map((url) => ({ url }))}
           currentIndex={activeImageIndex}
           onClose={() => setZoomModalOpen(false)}
         />

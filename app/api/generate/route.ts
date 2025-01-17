@@ -1,33 +1,42 @@
-//app/api/generate/route.ts
-"use server"
-import { NextRequest, NextResponse } from 'next/server';
-import axios from 'axios';
-import { prisma } from '@/lib/prisma';
-import { getAuth } from '@clerk/nextjs/server';
+// app/api/generate/route.ts
+"use server";
+
+import { NextRequest, NextResponse } from "next/server";
+import axios from "axios";
+import { prisma } from "@/lib/prisma";
+import { getAuth } from "@clerk/nextjs/server";
+import { instaSDConfig } from "@/config/instaSD";
 
 export async function POST(req: NextRequest) {
   try {
     const { userId } = getAuth(req);
 
     if (!userId) {
-      console.error('❌ Unauthorized access attempt');
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      console.error("❌ Unauthorized access attempt");
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const { apiEndpoint, payload } = await req.json();
+    // Grab apiMode, payload from client
+    const { apiMode, payload } = await req.json();
 
-    if (!apiEndpoint || !payload) {
-      console.error('❌ Missing apiEndpoint or payload:', { apiEndpoint, payload });
-      return NextResponse.json({ error: 'Missing apiEndpoint or payload' }, { status: 400 });
+    // Look up the correct endpoint + token
+    const { endpoint, authToken } = instaSDConfig[apiMode as "text" | "image"] || {};
+
+    if (!endpoint || !payload) {
+      console.error("❌ Missing endpoint or payload:", { endpoint, payload });
+      return NextResponse.json(
+        { error: "Missing endpoint or payload" },
+        { status: 400 }
+      );
     }
 
-    // 🟢 Step 1: Test API Call
-    let task_id;
+    // 1. Call InstaSD API to run the task
+    let task_id: string;    
     try {
-      const response = await axios.post(`${apiEndpoint}/run_task`, payload, {
+      const response =   await axios.post(`${endpoint}/run_task`, payload, {
         headers: {
-          Authorization: `Bearer ${process.env.NEXT_PUBLIC_INSTASD_AUTH_TOKEN}`,
-          'Content-Type': 'application/json',
+          Authorization: `Bearer ${authToken}`,
+          "Content-Type": "application/json",
         },
       });
 
@@ -35,77 +44,97 @@ export async function POST(req: NextRequest) {
     } catch (apiError: unknown) {
       if (axios.isAxiosError(apiError)) {
         console.error("❌ Error in API call to InstaSD:", apiError.response?.data || apiError.message);
-        return NextResponse.json({ 
-          error: 'Failed API call to InstaSD', 
-          details: apiError.response?.data || apiError.message 
-        }, { status: 500 });
+        return NextResponse.json(
+          {
+            error: "Failed API call to InstaSD",
+            details: apiError.response?.data || apiError.message,
+          },
+          { status: 500 }
+        );
       } else {
         console.error("❌ Unknown error:", apiError);
-        return NextResponse.json({ error: 'Unknown error occurred' }, { status: 500 });
+        return NextResponse.json({ error: "Unknown error occurred" }, { status: 500 });
       }
     }
 
-    // 🟢 Step 2: Test Database Write
+    // 2. Write to DB
     try {
       await prisma.request.create({
         data: {
           userId,
           taskId: task_id,
-          status: 'CREATED',
-          cost: 0,
+          status: "CREATED",
+          cost: 0, // might be updated later
         },
       });
     } catch (dbError: unknown) {
       if (dbError instanceof Error) {
-        console.error("❌ Error writing to the database:", dbError.message);
-        return NextResponse.json({ 
-          error: 'Failed to write to the database', 
-          details: dbError.message 
-        }, { status: 500 });
+        console.error("❌ Error writing to DB:", dbError.message);
+        return NextResponse.json(
+          {
+            error: "Failed to write to the database",
+            details: dbError.message,
+          },
+          { status: 500 }
+        );
       } else {
-        console.error("❌ Unknown database error:", dbError);
-        return NextResponse.json({ error: 'Unknown database error' }, { status: 500 });
+        console.error("❌ Unknown DB error:", dbError);
+        return NextResponse.json({ error: "Unknown DB error" }, { status: 500 });
       }
     }
 
-    return NextResponse.json({ task_id, status: 'CREATED' });
+    return NextResponse.json({ task_id, status: "CREATED" });
   } catch (error: unknown) {
     if (error instanceof Error) {
-      console.error('❌ General error:', error.message);
-      return NextResponse.json({ 
-        error: 'Failed to start task', 
-        details: error.message 
-      }, { status: 500 });
+      console.error("❌ General error:", error.message);
+      return NextResponse.json(
+        {
+          error: "Failed to start task",
+          details: error.message,
+        },
+        { status: 500 }
+      );
     } else {
-      console.error('❌ Unknown error:', error);
-      return NextResponse.json({ error: 'Unknown error occurred' }, { status: 500 });
+      console.error("❌ Unknown error:", error);
+      return NextResponse.json({ error: "Unknown error occurred" }, { status: 500 });
     }
   }
 }
 
-// GET: Check task status and update the database with the results
+// GET route: check the status, return progress, and update the DB
 export async function GET(req: NextRequest) {
-  const { searchParams } = new URL(req.url);
-  const apiEndpoint = searchParams.get('apiEndpoint');
-  const taskId = searchParams.get('task_id');
-
-  if (!apiEndpoint || !taskId) {
-    return NextResponse.json({ error: 'Missing apiEndpoint or task_id' }, { status: 400 });
-  }
-
   try {
-    const statusResponse = await axios.get(
-      `${apiEndpoint}/task_status/${taskId}`,
-      {
-        headers: {
-          Authorization: `Bearer ${process.env.NEXT_PUBLIC_INSTASD_AUTH_TOKEN}`,
-        },
-      }
-    );
+    const { searchParams } = new URL(req.url);
+    const apiMode = searchParams.get("apiMode");
+    const taskId = searchParams.get("task_id");
+    console.log("Checking task status:", { apiMode, taskId });
+    if (!apiMode || !taskId) {
+      return NextResponse.json({ error: "Missing apiMode or task_id" }, { status: 400 });
+    }
+    const { endpoint, authToken } = instaSDConfig[apiMode as "text" | "image"] || {};
+    if (!endpoint) {
+      return NextResponse.json({ error: "Unknown mode" }, { status: 400 });
+    }
 
-    const { status, image_urls, video_urls, completed_steps, estimated_steps, cost } = statusResponse.data;
+    // 1. Call InstaSD to check the status
+    const statusResponse = await axios.get(`${endpoint}/task_status/${taskId}`, {
+      headers: {
+        Authorization: `Bearer ${authToken}`,
+      },
+    });
 
-    // Update the task in the database
+    const {
+      status,
+      image_urls,
+      video_urls,
+      estimated_steps,
+      completed_steps,
+      cost,
+    } = statusResponse.data;
+
+    console.log(completed_steps)
+
+    // 2. Update the DB with the new status
     await prisma.request.update({
       where: { taskId },
       data: {
@@ -116,9 +145,27 @@ export async function GET(req: NextRequest) {
       },
     });
 
-    return NextResponse.json({ status, image_urls, video_urls, completed_steps, estimated_steps });
+    // 3. Compute progress in percentage
+    let progress = 0;
+    if (status != "COMPLETED") {
+      progress = Math.floor((completed_steps / estimated_steps) * 100);
+    } else if (status === "COMPLETED") {
+      progress = 100;
+    }
+
+    // 4. Return everything needed by the client
+    return NextResponse.json({
+      taskId,
+      status,
+      progress,
+      image_urls,
+      video_urls,
+      estimated_steps,
+      completed_steps,
+      cost,
+    });
   } catch (error) {
-    console.error('Error checking task status:', error);
-    return NextResponse.json({ error: 'Failed to check task status' }, { status: 500 });
+    console.error("Error checking task status:", error);
+    return NextResponse.json({ error: "Failed to check task status" }, { status: 500 });
   }
 }
