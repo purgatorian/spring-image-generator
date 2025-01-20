@@ -27,6 +27,7 @@ import {
 import { Lock, LockOpen } from "lucide-react";
 import {
   buildTextModePayload,
+  buildImageModePayload,
 } from "@/lib/payloadBuilder";
 import { useToast } from "@/hooks/use-toast";
 
