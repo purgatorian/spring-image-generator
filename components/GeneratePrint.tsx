@@ -263,10 +263,11 @@ const handleGenerate = async () => {
               />
             </>
           ) : (          
-              <ImageUploadSection
-                onUploadComplete={(url) => setUploadedImageUrl(url)}
-                onAnalyzeImage={fetchPrintDescription}
-              />            
+            <ImageUploadSection
+              onUploadComplete={(url) => setUploadedImageUrl(url)}
+              onAnalyzeImage={(imageUrl) => fetchPrintDescription(imageUrl)}
+            />
+          
             )
           }
 
