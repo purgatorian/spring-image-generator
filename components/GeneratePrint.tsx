@@ -1,13 +1,12 @@
 // app/components/GeneratePrint.tsx
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import Image from "next/image";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Slider } from "@/components/ui/slider";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Progress } from "@/components/ui/progress";
@@ -28,20 +27,14 @@ import {
 import { Lock, LockOpen } from "lucide-react";
 import {
   buildTextModePayload,
-  buildImageModePayload
 } from "@/lib/payloadBuilder";
-
+import { useToast } from "@/hooks/use-toast";
 
 export const GeneratePrint = () => {
   const [batchSkeletons, setBatchSkeletons] = useState<string[]>([]);
   const [mode, setMode] = useState<"text" | "image">("text");
-  const [parameters, setParameters] = useState({
-    resolution: "1024x1024",
-    batchSize: 1,
-    denoise: 1,
-    tiling: true,
-    resolutionLocked: true,
-  });
+  const [prompt, setPrompt] = useState("");
+  const [negativePrompt, setNegativePrompt] = useState("Low-quality details, blurry textures, pixelated patterns, distorted shapes, overexposed colors, harsh gradients, excessive noise, artifacts, unintended objects, incomplete designs, asymmetry in patterns (unless intentional), clashing colors, low contrast, uneven spacing, unrealistic elements, unrelated background objects, unwanted shadows, misaligned repetitions, overcomplicated designs, poor composition, random text, logos, watermarks, or borders.");
   const [generatedImages, setGeneratedImages] = useState<string[]>([]);
   const [status, setStatus] = useState("Waiting for generation...");
   const [runId, setRunId] = useState<string>("");
@@ -51,9 +44,59 @@ export const GeneratePrint = () => {
   const [zoomModalOpen, setZoomModalOpen] = useState(false);
   const [activeImageIndex, setActiveImageIndex] = useState(0);
   const [isGenerating, setIsGenerating] = useState(false);
-  const [prompt, setPrompt] = useState("");
-  const [negativePrompt, setNegativePrompt] = useState("");
   const [uploadedImageUrl, setUploadedImageUrl] = useState<string | null>(null);
+  const [useOpenAIHelper, setUseOpenAIHelper] = useState(false); // Initialize OpenAI Helper toggle
+  const [parameters, setParameters] = useState({
+    resolution: "1024x1024",
+    batchSize: 1,
+    tiling: true,
+    resolutionLocked: true,
+  });
+  const { toast } = useToast();
+
+  // Memoized fetchPrintDescription function
+  const fetchPrintDescription = useCallback(async (imageUrl: string) => {
+    if (!prompt) {
+      try {
+        setIsGenerating(true);
+        setStatus("Analyzing image...");
+        const response = await fetch("/api/describe-print", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ imageUrl }),
+        });
+    
+        if (!response.ok) {
+          throw new Error("Failed to fetch description");
+        }
+    
+        const { description } = await response.json();
+        setPrompt(description);
+        setIsGenerating(false);
+        console.log("Description fetched successfully:", description);
+        setStatus("Description fetched successfully");
+      } catch (error) {
+        // Access `toast` here directly; no need to track it as a dependency
+        toast({
+          title: "Error",
+          description: error instanceof Error ? error.message : "Unknown error",
+          variant: "destructive",
+        });
+        setStatus("Failed to analyze image");
+      }
+    }
+
+  }, [prompt,toast]); // Empty dependency array, `toast` is stable and doesn't need to be included
+  
+  useEffect(() => {
+    if (uploadedImageUrl && useOpenAIHelper) {
+      fetchPrintDescription(uploadedImageUrl);
+    }
+  }, [uploadedImageUrl, useOpenAIHelper, fetchPrintDescription]); // Correct dependencies
+  
+  
+
+
   // Smooth progress bar update
   useEffect(() => {
     if (progress === 100) {
@@ -128,8 +171,12 @@ const handleGenerate = async () => {
   if (mode === "text") {
     payload = buildTextModePayload(prompt.trim(), negativePrompt.trim(), parameters);
   } else if (mode === "image" && uploadedImageUrl) {
-    payload = buildImageModePayload(uploadedImageUrl, parameters);
-  }
+      if (!prompt) {
+        payload = buildImageModePayload(uploadedImageUrl, negativePrompt, parameters);
+      }else{
+        payload = buildTextModePayload(prompt, negativePrompt, parameters);  }
+        setMode("text");
+      }
   try {
     const res = await fetch("/api/generate", {
       method: "POST",
@@ -183,8 +230,20 @@ const handleGenerate = async () => {
             />
             <span className="text-sm md:text-base">Image</span>
           </div>
-
           {/* Input Section */}
+           {/* OpenAI Helper Toggle (Visible only in Image Mode) */}
+            {mode === "image" && (
+              <div className="flex items-center space-x-2">
+                <Checkbox
+                  id="openai-helper"
+                  checked={useOpenAIHelper}
+                  onCheckedChange={(checked) => setUseOpenAIHelper(checked)}
+                />
+                <label htmlFor="openai-helper" className="text-sm md:text-base">
+                  Enable OpenAI Helper
+                </label>
+              </div>
+            )}
           {mode === "text" ? (
             <>
               <Textarea
@@ -202,9 +261,13 @@ const handleGenerate = async () => {
                 onChange={(e) => setNegativePrompt(e.target.value)}
               />
             </>
-          ) : (
-            <ImageUploadSection onUploadComplete={(url) => setUploadedImageUrl(url)} />
-          )}
+          ) : (          
+              <ImageUploadSection
+                onUploadComplete={(url) => setUploadedImageUrl(url)}
+                onAnalyzeImage={fetchPrintDescription}
+              />            
+            )
+          }
 
           {/* Generate & Advanced Params */}
           <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-4">
@@ -290,24 +353,6 @@ const handleGenerate = async () => {
                       className="w-full"
                     />
                   </div>
-
-                  {/* Denoise */}
-                  <div className="flex items-center justify-between">
-                    <label>Denoise:</label>
-                    <Slider
-                      value={[parameters.denoise * 100]}
-                      max={100}
-                      step={1}
-                      onValueChange={(value) =>
-                        setParameters((prev) => ({
-                          ...prev,
-                          denoise: value[0] / 100,
-                        }))
-                      }
-                      className="w-full"
-                    />
-                  </div>
-
                   {/* Tiling */}
                   <div className="flex items-center gap-2">
                     <label>Enable Tiling</label>
@@ -324,8 +369,8 @@ const handleGenerate = async () => {
             <Button
               onClick={handleGenerate}
               className="h-12 w-full md:w-auto flex items-center justify-center"
-              disabled={isGenerating}
-            >
+              disabled={isGenerating || (!prompt && mode === "text") || (!uploadedImageUrl && mode === "image")}
+              >
               {isGenerating ? (
                 <svg
                   className="animate-spin h-5 w-5 text-white"
