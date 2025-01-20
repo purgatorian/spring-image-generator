@@ -173,7 +173,7 @@ const handleGenerate = async () => {
     payload = buildTextModePayload(prompt.trim(), negativePrompt.trim(), parameters);
   } else if (mode === "image" && uploadedImageUrl) {
       if (!prompt) {
-        payload = buildImageModePayload(uploadedImageUrl, negativePrompt, parameters);
+        payload = buildImageModePayload(uploadedImageUrl, parameters);
       }else{
         payload = buildTextModePayload(prompt, negativePrompt, parameters);  }
         setMode("text");
