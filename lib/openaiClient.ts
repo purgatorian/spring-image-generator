@@ -64,7 +64,7 @@ export async function fetchOpenAIDescription(imageUrl: string): Promise<string> 
       ],
     });
 
-    const description = response.choices[0]?.message?.content.trim();
+    const description = response.choices[0]?.message?.content?.trim();
     if (!description) {
       throw new Error("No description returned from OpenAI");
     }
