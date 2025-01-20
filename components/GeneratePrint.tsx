@@ -27,7 +27,6 @@ import {
 import { Lock, LockOpen } from "lucide-react";
 import {
   buildTextModePayload,
-  buildImageModePayload,
 } from "@/lib/payloadBuilder";
 import { useToast } from "@/hooks/use-toast";
 
@@ -46,7 +45,7 @@ export const GeneratePrint = () => {
   const [activeImageIndex, setActiveImageIndex] = useState(0);
   const [isGenerating, setIsGenerating] = useState(false);
   const [uploadedImageUrl, setUploadedImageUrl] = useState<string | null>(null);
-  const [useOpenAIHelper, setUseOpenAIHelper] = useState(false); // Initialize OpenAI Helper toggle
+  const [lastProcessedUrl, setLastProcessedUrl] = useState<string | null>(null);
   const [parameters, setParameters] = useState({
     resolution: "1024x1024",
     batchSize: 1,
@@ -87,13 +86,19 @@ export const GeneratePrint = () => {
       }
     }
 
-  }, [prompt,toast]); // Empty dependency array, `toast` is stable and doesn't need to be included
-  
+  }, [prompt,toast]);
+
   useEffect(() => {
-    if (uploadedImageUrl && useOpenAIHelper) {
-      fetchPrintDescription(uploadedImageUrl);
+    if (uploadedImageUrl && uploadedImageUrl !== lastProcessedUrl) {
+      fetchPrintDescription(uploadedImageUrl)
+        .then(() => {
+          setLastProcessedUrl(uploadedImageUrl); // Mark as processed
+        })
+        .catch((error) => {
+          console.error("Error analyzing image:", error);
+        });
     }
-  }, [uploadedImageUrl, useOpenAIHelper, fetchPrintDescription]); // Correct dependencies
+  }, [uploadedImageUrl, fetchPrintDescription, lastProcessedUrl]);
   
   
 
@@ -140,7 +145,7 @@ export const GeneratePrint = () => {
         // If completed, show the images immediately
         if (data.status === "COMPLETED") {
           setIsGenerating(false);
-
+          setPrompt("");
           if (data.image_urls?.length) {
             setGeneratedImages(data.image_urls);
           }
@@ -173,10 +178,14 @@ const handleGenerate = async () => {
     payload = buildTextModePayload(prompt.trim(), negativePrompt.trim(), parameters);
   } else if (mode === "image" && uploadedImageUrl) {
       if (!prompt) {
-        payload = buildImageModePayload(uploadedImageUrl, parameters);
+        //toast no prompt
+        toast({
+          title: "Error",
+          description: "Please provide a prompt before generating.",
+          variant: "destructive",
+        });
       }else{
         payload = buildTextModePayload(prompt, negativePrompt, parameters);  }
-        setMode("text");
       }
   try {
     const res = await fetch("/api/generate", {
@@ -232,19 +241,6 @@ const handleGenerate = async () => {
             <span className="text-sm md:text-base">Image</span>
           </div>
           {/* Input Section */}
-           {/* OpenAI Helper Toggle (Visible only in Image Mode) */}
-            {mode === "image" && (
-              <div className="flex items-center space-x-2">
-                <Checkbox
-                  id="openai-helper"
-                  checked={useOpenAIHelper}
-                  onCheckedChange={(checked) => setUseOpenAIHelper(checked === true)}
-                />
-                <label htmlFor="openai-helper" className="text-sm md:text-base">
-                  Enable OpenAI Helper
-                </label>
-              </div>
-            )}
           {mode === "text" ? (
             <>
               <Textarea
@@ -266,8 +262,7 @@ const handleGenerate = async () => {
             <ImageUploadSection
               onUploadComplete={(url) => setUploadedImageUrl(url)}
               onAnalyzeImage={(imageUrl) => fetchPrintDescription(imageUrl)}
-            />
-          
+            />          
             )
           }
 
