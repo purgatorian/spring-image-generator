@@ -238,7 +238,7 @@ const handleGenerate = async () => {
                 <Checkbox
                   id="openai-helper"
                   checked={useOpenAIHelper}
-                  onCheckedChange={(checked) => setUseOpenAIHelper(checked)}
+                  onCheckedChange={(checked) => setUseOpenAIHelper(checked === true)}
                 />
                 <label htmlFor="openai-helper" className="text-sm md:text-base">
                   Enable OpenAI Helper
