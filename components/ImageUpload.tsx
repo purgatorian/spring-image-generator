@@ -9,7 +9,9 @@ import { put } from "@vercel/blob";
 // ✅ Define props for the component
 interface ImageUploadSectionProps {
   onUploadComplete: (url: string) => void;
+  onAnalyzeImage?: (imageUrl: string) => Promise<void>; // Optional if not always used
 }
+
 
 export default function ImageUploadSection({ onUploadComplete }: ImageUploadSectionProps) {
   const [uploadedImage, setUploadedImage] = useState<File & { preview: string } | null>(null);
