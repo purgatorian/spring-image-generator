@@ -7,8 +7,9 @@ const prompt = `
 Analyze the print design on the garment visible in the provided image and provide a detailed description suitable for replication using digital art tools or AI models. Focus on the following aspects:
 
 1. **Colors**:
-  - Identify all prominent colors used in the print, including gradients or subtle shades.
-  - Describe the background color and how it contrasts or blends with the print elements.
+   - Identify all prominent colors, including background and accent colors.
+   - Provide approximate Hex codes or standardized color references (e.g., Pantone) for each color or gradient.
+   - Note subtle color variations, highlights, and shadows.
 
 2. **Visual Elements**:
   - Describe all visible elements, such as:
@@ -22,13 +23,11 @@ Analyze the print design on the garment visible in the provided image and provid
   - Describe how the design repeats across the garment (e.g., "a regular grid with evenly spaced motifs" or "freeform, scattered elements with no strict repetition").
   - Include details about the scale of the repetition (e.g., "small, densely packed patterns" or "large motifs spaced far apart").
 
-4. **Arrangement and Spacing**:
+4. **Arrangement**:
   - Explain how the elements are arranged:
     - Are they connected by lines, vines, or other elements?
     - Is the flow of the design vertical, horizontal, diagonal, or organic?
   - Mention symmetry or asymmetry in the arrangement.
-  - Identify spacing between patterns, including any empty spaces or gaps (e.g., "regularly spaced gaps between floral motifs" or "uneven empty spaces creating an organic feel").
-  - Describe alignment and positional relationships (e.g., "elements aligned in vertical columns with equal spacing" or "randomly scattered without consistent spacing").
 
 5. **Textures**:
   - Describe any visible textures in the print (e.g., "a rough, hand-painted effect" or "smooth, vector-like patterns").
@@ -42,15 +41,8 @@ Analyze the print design on the garment visible in the provided image and provid
   - Specify any unique visual characteristics, such as metallic or shimmering effects, gradients, or fine details.
   - If the print includes identifiable objects (e.g., animals, symbols), provide their names and describe their features.
 
-8. **Location and Orientation**:
-  - Detail the placement of key motifs (e.g., "large floral motifs centered along the hemline").
-  - Describe the orientation of elements (e.g., "vines twisting diagonally from the bottom left to the top right").
-  - Note how specific design elements relate to garment sections (e.g., "repeated leaf motifs positioned along the sleeves").
-
 Provide the description in a structured and detailed format for accurate reproduction using AI tools like Stable Diffusion.
 `;
-
-
 
 const systemPrompt = "You are a highly skilled AI specializing in analyzing garment prints and providing comprehensive descriptions to enable accurate digital reproduction. Your task is to focus on the visual details of the print, including colors, patterns, textures, styles, and arrangements, while ignoring unrelated garment features such as fabric type or garment fit."
 

@@ -73,7 +73,6 @@ export const GeneratePrint = () => {
         const { description } = await response.json();
         setPrompt(description);
         setIsGenerating(false);
-        console.log("Description fetched successfully:", description);
         setStatus("Description fetched successfully");
       } catch (error) {
         // Access `toast` here directly; no need to track it as a dependency
@@ -260,9 +259,14 @@ const handleGenerate = async () => {
             </>
           ) : (          
             <ImageUploadSection
-              onUploadComplete={(url) => setUploadedImageUrl(url)}
-              onAnalyzeImage={(imageUrl) => fetchPrintDescription(imageUrl)}
-            />          
+            onUploadComplete={(url) => setUploadedImageUrl(url)}
+            onAnalyzeImage={(imageUrl) => fetchPrintDescription(imageUrl)}
+            onRemoveImage={() => {
+              // Clear the prompt (or do any extra cleanup)
+              setPrompt("");
+              setUploadedImageUrl(null);
+            }}
+          />        
             )
           }
 
