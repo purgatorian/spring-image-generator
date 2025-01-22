@@ -260,7 +260,6 @@ const handleGenerate = async () => {
           ) : (          
             <ImageUploadSection
             onUploadComplete={(url) => setUploadedImageUrl(url)}
-            onAnalyzeImage={(imageUrl) => fetchPrintDescription(imageUrl)}
             onRemoveImage={() => {
               // Clear the prompt (or do any extra cleanup)
               setPrompt("");
