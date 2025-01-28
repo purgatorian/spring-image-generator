@@ -1,3 +1,4 @@
+//app/requests/page.tsx
 "use client";
 
 import { useEffect, useState } from "react";
@@ -74,10 +75,12 @@ export default function RequestsPage() {
     }
   };
 
-  const handleImageClick = (url: string) => {
-    setActiveImage(url);
+  const handleImageClick = (imageUrls: string, index: number) => {
+    const images = JSON.parse(imageUrls || "[]").map((url: string) => ({ url }));
+    setActiveImage({ images, index });
     setZoomModalOpen(true);
   };
+  
 
   const handleUpdate = async (taskId: string, mode: string) => {
     setActionLoading(taskId);
@@ -134,16 +137,31 @@ export default function RequestsPage() {
                       <TableCell>{formatMode(req.mode)}</TableCell>
                       <TableCell>
                         {images.length > 0 ? (
-                          <Image
-                            src={images[0]}
-                            alt="Generated Image"
-                            width={50}
-                            height={50}
-                            className="rounded cursor-pointer"
-                            onClick={() => handleImageClick(images[0])}
-                          />
-                        ) : "No Image"}
+                          <div
+                            className="flex items-center cursor-pointer"
+                            onClick={() => handleImageClick(req.imageUrls, 0)} // Pass the raw imageUrls and start index
+                          >
+                            <Image
+                              src={images[0]} // Display the first image as a preview
+                              alt="Generated Image"
+                              width={50}
+                              height={50}
+                              className="rounded"
+                              onError={(e) => {
+                                const target = e.target as HTMLImageElement;
+                                target.src = "/no-image.jpg"; // Fallback to default image
+                              }}
+                              unoptimized
+                            />
+                            {images.length > 1 && (
+                              <span className="ml-2 text-sm text-gray-500">{`+${images.length - 1} more`}</span>
+                            )}
+                          </div>
+                        ) : (
+                          "No Image"
+                        )}
                       </TableCell>
+
                       <TableCell>
                         {videos.length > 0 ? (
                           <a
@@ -182,11 +200,10 @@ export default function RequestsPage() {
           )}
         </CardContent>
       </Card>
-
       {zoomModalOpen && activeImage && (
         <ZoomModal
-          images={[{ url: activeImage }]}
-          currentIndex={0}
+          images={activeImage.images} // Parsed images
+          currentIndex={activeImage.index} // Start index
           onClose={() => setZoomModalOpen(false)}
         />
       )}

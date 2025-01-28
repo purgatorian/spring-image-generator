@@ -99,9 +99,6 @@ export const GeneratePrint = () => {
     }
   }, [uploadedImageUrl, fetchPrintDescription, lastProcessedUrl]);
   
-  
-
-
   // Smooth progress bar update
   useEffect(() => {
     if (progress === 100) {
@@ -118,6 +115,7 @@ export const GeneratePrint = () => {
       return () => clearTimeout(timeout);
     }
   }, [progress, displayedProgress]);
+  
   // 1. Poll the server for status if we have a runId
   useEffect(() => {
     if (!runId) return;

@@ -1,9 +1,9 @@
 "use client";
 
-import { useEffect, useState, useCallback } from 'react';
-import { useParams } from 'next/navigation';
-import Image from 'next/image';
-import { Loader2 } from 'lucide-react';
+import { useEffect, useState, useCallback } from "react";
+import { useParams } from "next/navigation";
+import Image from "next/image";
+import { Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import ZoomModal from "@/components/ZoomModal";
 
@@ -25,7 +25,7 @@ export default function CollectionPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [zoomModalOpen, setZoomModalOpen] = useState(false);
-  const [activeImage, setActiveImage] = useState<string | null>(null);
+  const [activeIndex, setActiveIndex] = useState<number>(0); // ✅ Use index instead of URL
 
   // ✅ Wrapped fetchCollection with useCallback to prevent recreation
   const fetchCollection = useCallback(async () => {
@@ -51,16 +51,16 @@ export default function CollectionPage() {
       setCollection(data);
     } catch (error) {
       if (error instanceof Error) {
-        console.error('Error fetching collection:', error.message);
+        console.error("Error fetching collection:", error.message);
         setError(error.message);
       } else {
-        console.error('Unexpected error:', error);
+        console.error("Unexpected error:", error);
         setError("An unexpected error occurred.");
       }
     } finally {
       setLoading(false);
     }
-  }, [id]);  // ✅ Included 'id' as a dependency
+  }, [id]); // ✅ Included 'id' as a dependency
 
   // ✅ Added fetchCollection to the dependency array
   useEffect(() => {
@@ -87,7 +87,9 @@ export default function CollectionPage() {
     return (
       <div className="text-center py-10 text-red-500">
         <p>{error}</p>
-        <Button onClick={handleRetry} className="mt-4">Retry</Button>
+        <Button onClick={handleRetry} className="mt-4">
+          Retry
+        </Button>
       </div>
     );
   }
@@ -96,20 +98,20 @@ export default function CollectionPage() {
   if (!collection) {
     return <div className="text-center py-10">Collection not found.</div>;
   }
-  const handleImageClick = (url: string) => {
-    setActiveImage(url);
-    setZoomModalOpen(true);
+
+  // ✅ Handle Image Click
+  const handleImageClick = (index: number) => {
+    setActiveIndex(index); // Set the active index
+    setZoomModalOpen(true); // Open the ZoomModal
   };
 
   return (
     <div className="p-6 w-full max-w-6xl mx-auto">
-      <h1 className="text-3xl font-bold text-center mb-6">
-        {collection.name}
-      </h1>
+      <h1 className="text-3xl font-bold text-center mb-6">{collection.name}</h1>
 
       {collection.images.length > 0 ? (
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
-          {collection.images.map((image) => (
+          {collection.images.map((image, index) => (
             <div key={image.id} className="relative w-full">
               <Image
                 src={image.url}
@@ -117,10 +119,15 @@ export default function CollectionPage() {
                 width={300}
                 height={200}
                 style={{ objectFit: "cover" }}
-                className="rounded-lg shadow-md"
+                className="rounded-lg shadow-md cursor-pointer"
                 placeholder="blur"
-                blurDataURL="/placeholder.png"
-                onClick={() => handleImageClick(image.url)}  // ✅ Open ZoomModal on click
+                blurDataURL="/no-image.png"
+                onError={(e) => {
+                  const target = e.target as HTMLImageElement;
+                  target.src = "/no-image.jpg"; // Fallback to default image
+                }}
+                unoptimized
+                onClick={() => handleImageClick(index)} // ✅ Pass the index to handleImageClick
               />
             </div>
           ))}
@@ -128,12 +135,13 @@ export default function CollectionPage() {
       ) : (
         <div className="text-center text-gray-500">No images in this collection yet.</div>
       )}
+
       {/* ✅ ZoomModal for Images */}
-      {zoomModalOpen && activeImage && (
+      {zoomModalOpen && collection.images.length > 0 && (
         <ZoomModal
-          images={[{ url: activeImage }]}
-          currentIndex={0}
-          onClose={() => setZoomModalOpen(false)}
+          images={collection.images.map((img) => ({ url: img.url }))} // Pass all images
+          currentIndex={activeIndex} // Pass the active index
+          onClose={() => setZoomModalOpen(false)} // Close the modal
         />
       )}
     </div>
