@@ -21,12 +21,19 @@ interface Request {
   mode: string;
 }
 
+// Define the type for activeImage state
+interface ActiveImage {
+  images: { url: string }[]; // Array of image objects with a `url` property
+  index: number;            // The current index of the image being viewed
+}
+
 export default function RequestsPage() {
   const [requests, setRequests] = useState<Request[]>([]);
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
   const [zoomModalOpen, setZoomModalOpen] = useState(false);
-  const [activeImage, setActiveImage] = useState<string | null>(null);
+  const [activeImage, setActiveImage] = useState<ActiveImage | null>(null); // Update the state type
+  const formatCost = (cost: number) => `$${(cost / 1000000).toFixed(6)}`;
 
   useEffect(() => {
     fetchRequests();
@@ -44,8 +51,6 @@ export default function RequestsPage() {
       setLoading(false);
     }
   };
-
-  const formatCost = (cost: number) => `$${(cost / 1000000).toFixed(6)}`;
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -76,11 +81,10 @@ export default function RequestsPage() {
   };
 
   const handleImageClick = (imageUrls: string, index: number) => {
-    const images = JSON.parse(imageUrls || "[]").map((url: string) => ({ url }));
-    setActiveImage({ images, index });
-    setZoomModalOpen(true);
+    const images = JSON.parse(imageUrls || "[]").map((url: string) => ({ url })); // Parse the image URLs
+    setActiveImage({ images, index }); // Update the state with images and index
+    setZoomModalOpen(true);            // Open the modal
   };
-  
 
   const handleUpdate = async (taskId: string, mode: string) => {
     setActionLoading(taskId);
