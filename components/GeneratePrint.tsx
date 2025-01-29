@@ -1,43 +1,43 @@
 // app/components/GeneratePrint.tsx
-"use client";
+'use client';
 
-import React, { useState, useEffect, useCallback } from "react";
-import Image from "next/image";
-import { Switch } from "@/components/ui/switch";
-import { Textarea } from "@/components/ui/textarea";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Skeleton } from "@/components/ui/skeleton";
-import { Progress } from "@/components/ui/progress";
-import ZoomModal from "@/components/ZoomModal";
-import ImageUploadSection from "@/components/ImageUpload";
+import React, { useState, useEffect, useCallback } from 'react';
+import Image from 'next/image';
+import { Switch } from '@/components/ui/switch';
+import { Textarea } from '@/components/ui/textarea';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Skeleton } from '@/components/ui/skeleton';
+import { Progress } from '@/components/ui/progress';
+import ZoomModal from '@/components/ZoomModal';
+import ImageUploadSection from '@/components/ImageUpload';
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from "@/components/ui/card";
+} from '@/components/ui/card';
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
-} from "@/components/ui/popover";
-import { Lock, LockOpen } from "lucide-react";
-import {
-  buildTextModePayload,
-} from "@/lib/payloadBuilder";
-import { useToast } from "@/hooks/use-toast";
+} from '@/components/ui/popover';
+import { Lock, LockOpen } from 'lucide-react';
+import { buildTextModePayload } from '@/lib/payloadBuilder';
+import { useToast } from '@/hooks/use-toast';
 
 export const GeneratePrint = () => {
   const [batchSkeletons, setBatchSkeletons] = useState<string[]>([]);
-  const [mode, setMode] = useState<"text" | "image">("text");
-  const [prompt, setPrompt] = useState("");
-  const [negativePrompt, setNegativePrompt] = useState("Low-quality details, blurry textures, pixelated patterns, distorted shapes, overexposed colors, harsh gradients, excessive noise, artifacts, unintended objects, incomplete designs, asymmetry in patterns (unless intentional), clashing colors, low contrast, uneven spacing, unrealistic elements, unrelated background objects, unwanted shadows, misaligned repetitions, overcomplicated designs, poor composition, random text, logos, watermarks, or borders.");
+  const [mode, setMode] = useState<'text' | 'image'>('text');
+  const [prompt, setPrompt] = useState('');
+  const [negativePrompt, setNegativePrompt] = useState(
+    'Low-quality details, blurry textures, pixelated patterns, distorted shapes, overexposed colors, harsh gradients, excessive noise, artifacts, unintended objects, incomplete designs, asymmetry in patterns (unless intentional), clashing colors, low contrast, uneven spacing, unrealistic elements, unrelated background objects, unwanted shadows, misaligned repetitions, overcomplicated designs, poor composition, random text, logos, watermarks, or borders.'
+  );
   const [generatedImages, setGeneratedImages] = useState<string[]>([]);
-  const [status, setStatus] = useState("Waiting for generation...");
-  const [runId, setRunId] = useState<string>("");
+  const [status, setStatus] = useState('Waiting for generation...');
+  const [runId, setRunId] = useState<string>('');
   const [progress, setProgress] = useState(0);
   const [displayedProgress, setDisplayedProgress] = useState(0);
   const [popoverOpen, setPopoverOpen] = useState(false);
@@ -47,7 +47,7 @@ export const GeneratePrint = () => {
   const [uploadedImageUrl, setUploadedImageUrl] = useState<string | null>(null);
   const [lastProcessedUrl, setLastProcessedUrl] = useState<string | null>(null);
   const [parameters, setParameters] = useState({
-    resolution: "1024x1024",
+    resolution: '1024x1024',
     batchSize: 1,
     tiling: true,
     resolutionLocked: true,
@@ -55,37 +55,40 @@ export const GeneratePrint = () => {
   const { toast } = useToast();
 
   // Memoized fetchPrintDescription function
-  const fetchPrintDescription = useCallback(async (imageUrl: string) => {
-    if (!prompt) {
-      try {
-        setIsGenerating(true);
-        setStatus("Analyzing image...");
-        const response = await fetch("/api/describe-print", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ imageUrl }),
-        });
-    
-        if (!response.ok) {
-          throw new Error("Failed to fetch description");
-        }
-    
-        const { description } = await response.json();
-        setPrompt(description);
-        setIsGenerating(false);
-        setStatus("Description fetched successfully");
-      } catch (error) {
-        // Access `toast` here directly; no need to track it as a dependency
-        toast({
-          title: "Error",
-          description: error instanceof Error ? error.message : "Unknown error",
-          variant: "destructive",
-        });
-        setStatus("Failed to analyze image");
-      }
-    }
+  const fetchPrintDescription = useCallback(
+    async (imageUrl: string) => {
+      if (!prompt) {
+        try {
+          setIsGenerating(true);
+          setStatus('Analyzing image...');
+          const response = await fetch('/api/describe-print', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ imageUrl }),
+          });
 
-  }, [prompt,toast]);
+          if (!response.ok) {
+            throw new Error('Failed to fetch description');
+          }
+
+          const { description } = await response.json();
+          setPrompt(description);
+          setIsGenerating(false);
+          setStatus('Description fetched successfully');
+        } catch (error) {
+          // Access `toast` here directly; no need to track it as a dependency
+          toast({
+            title: 'Error',
+            description:
+              error instanceof Error ? error.message : 'Unknown error',
+            variant: 'destructive',
+          });
+          setStatus('Failed to analyze image');
+        }
+      }
+    },
+    [prompt, toast]
+  );
 
   useEffect(() => {
     if (uploadedImageUrl && uploadedImageUrl !== lastProcessedUrl) {
@@ -94,11 +97,11 @@ export const GeneratePrint = () => {
           setLastProcessedUrl(uploadedImageUrl); // Mark as processed
         })
         .catch((error) => {
-          console.error("Error analyzing image:", error);
+          console.error('Error analyzing image:', error);
         });
     }
   }, [uploadedImageUrl, fetchPrintDescription, lastProcessedUrl]);
-  
+
   // Smooth progress bar update
   useEffect(() => {
     if (progress === 100) {
@@ -115,21 +118,23 @@ export const GeneratePrint = () => {
       return () => clearTimeout(timeout);
     }
   }, [progress, displayedProgress]);
-  
+
   // 1. Poll the server for status if we have a runId
   useEffect(() => {
     if (!runId) return;
     const intervalId = setInterval(async () => {
       try {
         // Query our own route:
-        const res = await fetch(`/api/generate?task_id=${runId}&apiMode=${mode}`);
+        const res = await fetch(
+          `/api/generate?task_id=${runId}&apiMode=${mode}`
+        );
         if (!res.ok) {
-          throw new Error("Failed to fetch task status");
+          throw new Error('Failed to fetch task status');
         }
         const data = await res.json();
 
         if (data.error) {
-          console.error("Error from server route:", data.error);
+          console.error('Error from server route:', data.error);
           setStatus(`Error: ${data.error}`);
           clearInterval(intervalId);
           return;
@@ -140,18 +145,18 @@ export const GeneratePrint = () => {
         setStatus(data.status);
 
         // If completed, show the images immediately
-        if (data.status === "COMPLETED") {
+        if (data.status === 'COMPLETED') {
           setIsGenerating(false);
-          setPrompt("");
+          setPrompt('');
           if (data.image_urls?.length) {
             setGeneratedImages(data.image_urls);
           }
-          setStatus("Completed");
+          setStatus('Completed');
           clearInterval(intervalId);
         }
       } catch (err) {
-        console.error("Polling error:", err);
-        setStatus("Error checking status");
+        console.error('Polling error:', err);
+        setStatus('Error checking status');
         clearInterval(intervalId);
       }
     }, 5000);
@@ -160,58 +165,63 @@ export const GeneratePrint = () => {
     return () => clearInterval(intervalId);
   }, [runId, mode]);
 
-// 2. Handle Generate
-const handleGenerate = async () => {
-  setIsGenerating(true);
-  setGeneratedImages([]);
-  setProgress(0);
-  setDisplayedProgress(0);
-  setBatchSkeletons(Array.from({ length: parameters.batchSize }));
-  setStatus("Queuing generation...");
+  // 2. Handle Generate
+  const handleGenerate = async () => {
+    setIsGenerating(true);
+    setGeneratedImages([]);
+    setProgress(0);
+    setDisplayedProgress(0);
+    setBatchSkeletons(Array.from({ length: parameters.batchSize }));
+    setStatus('Queuing generation...');
 
-  let payload;
+    let payload;
 
-  if (mode === "text") {
-    payload = buildTextModePayload(prompt.trim(), negativePrompt.trim(), parameters);
-  } else if (mode === "image" && uploadedImageUrl) {
+    if (mode === 'text') {
+      payload = buildTextModePayload(
+        prompt.trim(),
+        negativePrompt.trim(),
+        parameters
+      );
+    } else if (mode === 'image' && uploadedImageUrl) {
       if (!prompt) {
         //toast no prompt
         toast({
-          title: "Error",
-          description: "Please provide a prompt before generating.",
-          variant: "destructive",
+          title: 'Error',
+          description: 'Please provide a prompt before generating.',
+          variant: 'destructive',
         });
-      }else{
-        payload = buildTextModePayload(prompt, negativePrompt, parameters);  }
+      } else {
+        payload = buildTextModePayload(prompt, negativePrompt, parameters);
       }
-  try {
-    const res = await fetch("/api/generate", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ apiMode: mode, payload }),
-    });
-
-    if (!res.ok) {
-      const errorDetails = await res.json();
-      console.error("❌ Detailed Error Response:", errorDetails);
-      throw new Error(`Failed to queue generation: ${errorDetails.error || res.statusText}`);
     }
+    try {
+      const res = await fetch('/api/generate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ apiMode: mode, payload }),
+      });
 
-    const { task_id } = await res.json();
-    setRunId(task_id);
-    setStatus("Queued");
-  } catch (error: unknown) {
-    console.error("❌ Error in handleGenerate:", error);
-    if (error instanceof Error) {
-      setStatus(`Error while queuing generation: ${error.message}`);
-    } else {
-      setStatus("An unknown error occurred while queuing generation.");
+      if (!res.ok) {
+        const errorDetails = await res.json();
+        console.error('❌ Detailed Error Response:', errorDetails);
+        throw new Error(
+          `Failed to queue generation: ${errorDetails.error || res.statusText}`
+        );
+      }
+
+      const { task_id } = await res.json();
+      setRunId(task_id);
+      setStatus('Queued');
+    } catch (error: unknown) {
+      console.error('❌ Error in handleGenerate:', error);
+      if (error instanceof Error) {
+        setStatus(`Error while queuing generation: ${error.message}`);
+      } else {
+        setStatus('An unknown error occurred while queuing generation.');
+      }
+    } finally {
     }
-  } finally {
-
-  }
-};
-
+  };
 
   // 3. UI
   return (
@@ -229,16 +239,16 @@ const handleGenerate = async () => {
           <div className="flex items-center space-x-2">
             <span className="text-sm md:text-base">Text</span>
             <Switch
-              checked={mode === "image"}
+              checked={mode === 'image'}
               onCheckedChange={(checked) => {
-                const newMode = checked ? "image" : "text";
+                const newMode = checked ? 'image' : 'text';
                 setMode(newMode);
               }}
             />
             <span className="text-sm md:text-base">Image</span>
           </div>
           {/* Input Section */}
-          {mode === "text" ? (
+          {mode === 'text' ? (
             <>
               <Textarea
                 placeholder="Describe in detail..."
@@ -255,17 +265,16 @@ const handleGenerate = async () => {
                 onChange={(e) => setNegativePrompt(e.target.value)}
               />
             </>
-          ) : (          
+          ) : (
             <ImageUploadSection
-            onUploadComplete={(url) => setUploadedImageUrl(url)}
-            onRemoveImage={() => {
-              // Clear the prompt (or do any extra cleanup)
-              setPrompt("");
-              setUploadedImageUrl(null);
-            }}
-          />        
-            )
-          }
+              onUploadComplete={(url) => setUploadedImageUrl(url)}
+              onRemoveImage={() => {
+                // Clear the prompt (or do any extra cleanup)
+                setPrompt('');
+                setUploadedImageUrl(null);
+              }}
+            />
+          )}
 
           {/* Generate & Advanced Params */}
           <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-4">
@@ -291,8 +300,8 @@ const handleGenerate = async () => {
                         }
                         className={`p-2 rounded ${
                           parameters.resolutionLocked
-                            ? "bg-blue-200 dark:bg-blue-700"
-                            : "hover:bg-gray-200 dark:hover:bg-gray-700"
+                            ? 'bg-blue-200 dark:bg-blue-700'
+                            : 'hover:bg-gray-200 dark:hover:bg-gray-700'
                         }`}
                       >
                         {parameters.resolutionLocked ? (
@@ -306,29 +315,31 @@ const handleGenerate = async () => {
                       <Input
                         type="number"
                         placeholder="Width"
-                        value={parameters.resolution.split("x")[0]}
+                        value={parameters.resolution.split('x')[0]}
                         className="w-full"
                         onChange={(e) =>
                           setParameters((prev) => ({
                             ...prev,
                             resolution: parameters.resolutionLocked
                               ? `${e.target.value}x${e.target.value}`
-                              : `${e.target.value}x${prev.resolution.split("x")[1]}`,
+                              : `${e.target.value}x${prev.resolution.split('x')[1]}`,
                           }))
                         }
                       />
-                      <span className="text-center text-gray-500 font-medium">X</span>
+                      <span className="text-center text-gray-500 font-medium">
+                        X
+                      </span>
                       <Input
                         type="number"
                         placeholder="Height"
-                        value={parameters.resolution.split("x")[1]}
+                        value={parameters.resolution.split('x')[1]}
                         className="w-full"
                         onChange={(e) =>
                           setParameters((prev) => ({
                             ...prev,
                             resolution: parameters.resolutionLocked
                               ? `${e.target.value}x${e.target.value}`
-                              : `${prev.resolution.split("x")[0]}x${e.target.value}`,
+                              : `${prev.resolution.split('x')[0]}x${e.target.value}`,
                           }))
                         }
                       />
@@ -341,13 +352,20 @@ const handleGenerate = async () => {
                     <Input
                       type="number"
                       min="1"
-                      value={parameters.batchSize}
-                      onChange={(e) =>
+                      value={parameters.batchSize || ''}
+                      onChange={(e) => {
+                        const value = e.target.value;
                         setParameters((prev) => ({
                           ...prev,
-                          batchSize: parseInt(e.target.value, 10),
-                        }))
-                      }
+                          batchSize: value === '' ? 1 : Number(value), // ✅ Ensure it's always a number
+                        }));
+                      }}
+                      onBlur={() => {
+                        setParameters((prev) => ({
+                          ...prev,
+                          batchSize: prev.batchSize || 1, // Default to 1 if empty on blur
+                        }));
+                      }}
                       className="w-full"
                     />
                   </div>
@@ -357,7 +375,10 @@ const handleGenerate = async () => {
                     <Checkbox
                       checked={parameters.tiling}
                       onCheckedChange={(checked) =>
-                        setParameters((prev) => ({ ...prev, tiling: checked === true }))
+                        setParameters((prev) => ({
+                          ...prev,
+                          tiling: checked === true,
+                        }))
                       }
                     />
                   </div>
@@ -367,8 +388,12 @@ const handleGenerate = async () => {
             <Button
               onClick={handleGenerate}
               className="h-12 w-full md:w-auto flex items-center justify-center"
-              disabled={isGenerating || (!prompt && mode === "text") || (!uploadedImageUrl && mode === "image")}
-              >
+              disabled={
+                isGenerating ||
+                (!prompt && mode === 'text') ||
+                (!uploadedImageUrl && mode === 'image')
+              }
+            >
               {isGenerating ? (
                 <svg
                   className="animate-spin h-5 w-5 text-white"
@@ -391,7 +416,7 @@ const handleGenerate = async () => {
                   />
                 </svg>
               ) : (
-                "Generate"
+                'Generate'
               )}
             </Button>
           </div>
@@ -406,23 +431,28 @@ const handleGenerate = async () => {
           {runId && (
             <div className="w-full mt-2">
               <p className="text-sm text-gray-600 mb-1">{status}</p>
-              <Progress value={displayedProgress} className="w-full transition-all duration-1500 ease-out" />
-              <p className="text-sm text-gray-600 text-right mt-1">{displayedProgress.toFixed(0)}%</p>
+              <Progress
+                value={displayedProgress}
+                className="w-full transition-all duration-1500 ease-out"
+              />
+              <p className="text-sm text-gray-600 text-right mt-1">
+                {displayedProgress.toFixed(0)}%
+              </p>
             </div>
           )}
         </CardHeader>
         <CardContent className="flex flex-wrap gap-4 justify-center">
-          {runId && generatedImages.length === 0 &&
+          {runId &&
+            generatedImages.length === 0 &&
             batchSkeletons.map((_, index) => (
               <Skeleton key={index} className="w-32 h-32 rounded" />
-            ))
-          }
+            ))}
 
           {generatedImages.map((imageUrl, index) => (
             <div
               key={index}
               className="relative cursor-pointer"
-              style={{ width: "100%", maxWidth: "200px", aspectRatio: "1 / 1" }}
+              style={{ width: '100%', maxWidth: '200px', aspectRatio: '1 / 1' }}
               onClick={() => {
                 setZoomModalOpen(true);
                 setActiveImageIndex(index);

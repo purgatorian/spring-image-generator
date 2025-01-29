@@ -1,19 +1,42 @@
+//npx eslint . --fix --ignore-pattern ".next/" --ignore-pattern "tailwind.config.ts"
 module.exports = {
-  parser: "@typescript-eslint/parser",
+  eslintIgnore: [
+    'node_modules/',
+    '.next/',
+    'dist/',
+    'public/',
+    '**/*.config.ts',
+    '**/*.config.js',
+    '**/*.json',
+    'prisma/',
+    'Dockerfile',
+    '.dockerignore',
+    '.env',
+    'README.md',
+    'tailwind.config.ts',
+  ],
+  parser: '@typescript-eslint/parser',
   parserOptions: {
     ecmaVersion: 2020,
-    sourceType: "module",
+    sourceType: 'module',
   },
-  plugins: ["@typescript-eslint"],
+  plugins: ['@typescript-eslint', 'prettier'],
   extends: [
-    "eslint:recommended",
-    "plugin:@typescript-eslint/recommended",
-    "next",
-    "next/core-web-vitals"
+    'eslint:recommended',
+    'plugin:@typescript-eslint/recommended',
+    'plugin:prettier/recommended',
+    'next',
+    'next/core-web-vitals',
   ],
   rules: {
-    "@typescript-eslint/no-unused-vars": ["error", { "argsIgnorePattern": "^_" }],  // ❗ Error for unused variables
-    "no-console": "error",  // ❗ Error on console logs
-    "no-debugger": "error"  // ❗ Error on debugger statements
-  }
+    '@typescript-eslint/no-unused-vars': ['error', { argsIgnorePattern: '^_' }],
+    '@typescript-eslint/no-explicit-any': 'off',
+    '@typescript-eslint/no-unsafe-function-type': 'off',
+    'no-console': 'error',
+    'no-debugger': 'error',
+    semi: ['error', 'always'],
+    quotes: ['error', 'single'],
+    indent: ['error', 2],
+    'prettier/prettier': 'error',
+  },
 };
