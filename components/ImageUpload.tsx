@@ -1,130 +1,130 @@
-// app/components/ImageUpload.tsx
-"use client";
+'use client';
 
-import { useState, useCallback } from "react";
-import { useDropzone } from "react-dropzone";
-import Image from "next/image";
-import { useToast } from "@/hooks/use-toast";
-import { put } from "@vercel/blob";
-import { Clipboard } from "lucide-react";
+import { useState, useCallback } from 'react';
+import { useDropzone } from 'react-dropzone';
+import Image from 'next/image';
+import { useToast } from '@/hooks/use-toast';
+import { Clipboard } from 'lucide-react';
 
 interface ImageUploadSectionProps {
   onUploadComplete: (url: string) => void;
-  onRemoveImage?: () => void; // <--- NEW callback prop
+  onRemoveImage?: () => void;
 }
 
 export default function ImageUploadSection({
   onUploadComplete,
   onRemoveImage,
 }: ImageUploadSectionProps) {
-  const [uploadedImage, setUploadedImage] = useState<File & { preview: string } | null>(null);
-  const [imageUrl, setImageUrl] = useState<string>("");
+  const [uploadedImage, setUploadedImage] = useState<
+    (File & { preview: string }) | null
+  >(null);
+  const [imageUrl, setImageUrl] = useState<string>('');
   const [loading, setLoading] = useState<boolean>(false);
   const { toast } = useToast();
 
+  /** Deletes an image from Vercel Blob */
   const deleteImage = useCallback(
     async (url: string) => {
+      if (!url) return;
+
+      setLoading(true);
       try {
-        const response = await fetch("/api/delete-image", {
-          method: "POST",
+        const response = await fetch('/api/delete-image', {
+          method: 'POST',
           body: JSON.stringify({ url }),
-          headers: { "Content-Type": "application/json" },
+          headers: { 'Content-Type': 'application/json' },
         });
 
         const data = await response.json();
-
         if (data.success) {
           toast({
-            title: "Deleted",
-            description: "Image deleted from Vercel Blob.",
-            variant: "default",
+            title: 'Deleted',
+            description: 'Image deleted from Vercel Blob.',
+            variant: 'default',
           });
+          setImageUrl('');
+          setUploadedImage(null);
+          onRemoveImage?.();
         } else {
           toast({
-            title: "Error",
-            description: "Failed to delete image.",
-            variant: "destructive",
+            title: 'Error',
+            description: 'Failed to delete image.',
+            variant: 'destructive',
           });
         }
-      } catch (error: unknown) {
-        if (error instanceof Error) {
-          toast({
-            title: "Error",
-            description: `Error deleting the image: ${error.message}`,
-            variant: "destructive",
-          });
-        } else {
-          toast({
-            title: "Error",
-            description: "An unexpected error occurred while deleting the image.",
-            variant: "destructive",
-          });
-        }
+      } catch (error) {
+        console.error('Delete error:', error);
+        toast({
+          title: 'Error',
+          description: 'An unexpected error occurred while deleting the image.',
+          variant: 'destructive',
+        });
+      } finally {
+        setLoading(false);
       }
     },
-    [toast]
+    [toast, onRemoveImage]
   );
 
+  /** Uploads an image to Vercel Blob */
   const uploadToVercelBlob = useCallback(
-    async (file: File) => {
+    async (file: File, folder: string = 'uploads') => {
       setLoading(true);
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('folder', folder);
+
       try {
-        const result = await put(file.name, file, {
-          access: "public",
-          token: process.env.NEXT_PUBLIC_BLOB_READ_WRITE_TOKEN,
-        });
-        setImageUrl(result.url);
-        toast({
-          title: "Success",
-          description: "Image uploaded to Vercel Blob!",
-          variant: "default",
+        const response = await fetch('/api/upload-image', {
+          method: 'POST',
+          body: formData,
         });
 
-        onUploadComplete(result.url);
+        const data = await response.json();
+        if (data.success) {
+          setImageUrl(data.url);
+          onUploadComplete(data.url);
 
-        // Auto-delete after 1 hour
-        setTimeout(() => {
-          if (result.url) {
-            deleteImage(result.url);
-          }
-        }, 3600000);
-      } catch (error: unknown) {
-        if (error instanceof Error) {
           toast({
-            title: "Upload Error",
-            description: `Error uploading image: ${error.message}`,
-            variant: "destructive",
+            title: 'Uploaded',
+            description: 'Image successfully uploaded!',
+            variant: 'default',
           });
         } else {
-          toast({
-            title: "Unexpected Error",
-            description: "An unexpected error occurred during upload.",
-            variant: "destructive",
-          });
+          throw new Error(data.message || 'Upload failed.');
         }
+      } catch (error) {
+        console.error('Upload error:', error);
+        toast({
+          title: 'Upload Error',
+          description: `Failed to upload: ${
+            error instanceof Error ? error.message : 'Unknown error'
+          }`,
+          variant: 'destructive',
+        });
       } finally {
         setLoading(false);
         setUploadedImage(null);
       }
     },
-    [toast, deleteImage, onUploadComplete]
+    [toast, onUploadComplete]
   );
 
+  /** Handles dropped files from drag & drop */
   const onDrop = useCallback(
     (acceptedFiles: File[]) => {
       const file = acceptedFiles[0];
-      if (file && file.type.startsWith("image/")) {
+      if (file && file.type.startsWith('image/')) {
         const previewFile = Object.assign(file, {
           preview: URL.createObjectURL(file),
         });
         setUploadedImage(previewFile);
-        setImageUrl("");
         uploadToVercelBlob(file);
       } else {
         toast({
-          title: "Upload Error",
-          description: "Only image files are accepted.",
-          variant: "destructive",
+          title: 'Upload Error',
+          description: 'Only image files are accepted.',
+          variant: 'destructive',
         });
       }
     },
@@ -133,47 +133,41 @@ export default function ImageUploadSection({
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop,
-    accept: { "image/*": [] },
+    accept: { 'image/*': [] },
     maxFiles: 1,
   });
 
-  // Delete local and remote references
+  /** Removes the uploaded image */
   const handleRemoveImage = () => {
     if (imageUrl) {
       deleteImage(imageUrl);
     }
-    setUploadedImage(null);
-    setImageUrl("");
-
-    // Notify parent that user removed the image
-    onRemoveImage?.();
   };
 
-  // New function to read from clipboard and validate URL
+  /** Reads an image URL from the clipboard */
   const handlePasteClipboard = useCallback(async () => {
     try {
       const clipboardText = await navigator.clipboard.readText();
-      new URL(clipboardText); // Validate URL will throw if invalid
-      setImageUrl(clipboardText);
+      new URL(clipboardText); // Ensure it's a valid URL
 
-      // Also call onUploadComplete if you want the parent
-      // to treat it the same as an upload
+      setImageUrl(clipboardText);
       onUploadComplete(clipboardText);
 
       toast({
-        title: "URL Pasted",
-        description: "Successfully pasted a valid URL.",
-        variant: "default",
+        title: 'URL Pasted',
+        description: 'Successfully pasted a valid image URL.',
+        variant: 'default',
       });
     } catch {
       toast({
-        title: "Invalid URL",
-        description: "Clipboard text is not a valid URL or read failed.",
-        variant: "destructive",
+        title: 'Invalid URL',
+        description: 'Clipboard text is not a valid URL.',
+        variant: 'destructive',
       });
     }
   }, [onUploadComplete, toast]);
 
+  /** Renders an image preview */
   const renderImagePreview = () => {
     const imageSrc = uploadedImage ? uploadedImage.preview : imageUrl;
     if (!imageSrc) return null;
@@ -207,14 +201,14 @@ export default function ImageUploadSection({
       <div
         {...getRootProps()}
         className={`border-2 border-dashed p-4 text-center cursor-pointer ${
-          isDragActive ? "border-blue-500" : "border-gray-300"
+          isDragActive ? 'border-blue-500' : 'border-gray-300'
         }`}
       >
         <input {...getInputProps()} />
         {renderImagePreview() || (
           <p>
             {isDragActive
-              ? "Drop the image here..."
+              ? 'Drop the image here...'
               : "Drag 'n' drop an image here, or click to select one."}
           </p>
         )}

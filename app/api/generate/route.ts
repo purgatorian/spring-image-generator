@@ -18,7 +18,6 @@ export async function POST(req: NextRequest) {
 
     // Grab apiMode, payload from client
     const { apiMode, payload } = await req.json();
-    console.log('apiMode:', apiMode, 'payload:', payload);
     // Look up the correct endpoint + token
     const { endpoint, authToken } =
       instaSDConfig[apiMode as keyof typeof instaSDConfig] || {};
