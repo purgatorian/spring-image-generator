@@ -1,23 +1,23 @@
 // app/api/collections/[id]/remove-image/route.ts
 
-import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
-import { getAuth } from "@clerk/nextjs/server";
+import { NextRequest, NextResponse } from 'next/server';
+import { prisma } from '@/lib/prisma';
+import { getAuth } from '@clerk/nextjs/server';
 
 export async function DELETE(req: NextRequest) {
   try {
     const { userId } = getAuth(req);
-    const { searchParams } = req.nextUrl;
-    const id = searchParams.get("id"); // Use query param for the collection ID
+    const id = req.nextUrl.pathname.split('/')[3]; // Assuming route: /api/collections/[id]/add-image
     const { imageUrl } = await req.json();
+    console.log(id, imageUrl);
 
     if (!userId) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     if (!id || !imageUrl) {
       return NextResponse.json(
-        { error: "Collection ID and Image URL are required." },
+        { error: 'Collection ID and Image URL are required.' },
         { status: 400 }
       );
     }
@@ -30,7 +30,7 @@ export async function DELETE(req: NextRequest) {
 
     if (!collection) {
       return NextResponse.json(
-        { error: "Collection not found or unauthorized" },
+        { error: 'Collection not found or unauthorized' },
         { status: 404 }
       );
     }
@@ -40,7 +40,7 @@ export async function DELETE(req: NextRequest) {
 
     if (!image) {
       return NextResponse.json(
-        { error: "Image not found in this collection." },
+        { error: 'Image not found in this collection.' },
         { status: 404 }
       );
     }
@@ -55,9 +55,12 @@ export async function DELETE(req: NextRequest) {
       },
     });
 
-    return NextResponse.json({ message: "Image removed from collection." });
+    return NextResponse.json({ message: 'Image removed from collection.' });
   } catch (error) {
-    console.error("Error removing image:", error);
-    return NextResponse.json({ error: "Failed to remove image" }, { status: 500 });
+    console.error('Error removing image:', error);
+    return NextResponse.json(
+      { error: 'Failed to remove image' },
+      { status: 500 }
+    );
   }
 }

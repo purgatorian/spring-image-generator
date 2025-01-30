@@ -1,11 +1,11 @@
-"use client";
+'use client';
 
-import { useEffect, useState, useCallback } from "react";
-import { useParams } from "next/navigation";
-import Image from "next/image";
-import { Loader2 } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import ZoomModal from "@/components/ZoomModal";
+import { useEffect, useState, useCallback } from 'react';
+import { useParams } from 'next/navigation';
+import Image from 'next/image';
+import { Loader2 } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import ZoomModal from '@/components/ZoomModal';
 
 interface ImageData {
   id: string;
@@ -39,11 +39,11 @@ export default function CollectionPage() {
 
       if (!res.ok) {
         if (res.status === 404) {
-          throw new Error("Collection not found.");
+          throw new Error('Collection not found.');
         } else if (res.status === 401) {
-          throw new Error("Unauthorized access.");
+          throw new Error('Unauthorized access.');
         } else {
-          throw new Error("Failed to fetch collection.");
+          throw new Error('Failed to fetch collection.');
         }
       }
 
@@ -51,11 +51,11 @@ export default function CollectionPage() {
       setCollection(data);
     } catch (error) {
       if (error instanceof Error) {
-        console.error("Error fetching collection:", error.message);
+        console.error('Error fetching collection:', error.message);
         setError(error.message);
       } else {
-        console.error("Unexpected error:", error);
-        setError("An unexpected error occurred.");
+        console.error('Unexpected error:', error);
+        setError('An unexpected error occurred.');
       }
     } finally {
       setLoading(false);
@@ -118,13 +118,13 @@ export default function CollectionPage() {
                 alt={`Image ${image.id}`}
                 width={300}
                 height={200}
-                style={{ objectFit: "cover" }}
+                style={{ objectFit: 'cover' }}
                 className="rounded-lg shadow-md cursor-pointer"
                 placeholder="blur"
-                blurDataURL="/no-image.png"
+                blurDataURL="/no-image.jpg"
                 onError={(e) => {
                   const target = e.target as HTMLImageElement;
-                  target.src = "/no-image.jpg"; // Fallback to default image
+                  target.src = '/no-image.jpg'; // Fallback to default image
                 }}
                 unoptimized
                 onClick={() => handleImageClick(index)} // ✅ Pass the index to handleImageClick
@@ -133,7 +133,9 @@ export default function CollectionPage() {
           ))}
         </div>
       ) : (
-        <div className="text-center text-gray-500">No images in this collection yet.</div>
+        <div className="text-center text-gray-500">
+          No images in this collection yet.
+        </div>
       )}
 
       {/* ✅ ZoomModal for Images */}

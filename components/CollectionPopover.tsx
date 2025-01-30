@@ -1,10 +1,10 @@
 // components/CollectionPopoverContent.tsx
-import React, { useState, useEffect, useCallback } from "react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Save } from "lucide-react";
-import { useToast } from "@/hooks/use-toast";
+import React, { useState, useEffect, useCallback } from 'react';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Save } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
 
 interface CollectionPopoverContentProps {
   imageUrl: string;
@@ -21,62 +21,88 @@ const CollectionPopoverContent: React.FC<CollectionPopoverContentProps> = ({
   imageUrl,
   onCollectionChange,
 }) => {
-  const [collectionName, setCollectionName] = useState("");
+  const [collectionName, setCollectionName] = useState('');
   const [collections, setCollections] = useState<Collection[]>([]);
   const [selectedCollections, setSelectedCollections] = useState<string[]>([]);
   const { toast } = useToast();
 
   const fetchCollections = useCallback(async () => {
     try {
-      const response = await fetch("/api/collections");
-      const data: Collection[] = await response.json();  // Explicitly typing the data
-  
+      const response = await fetch('/api/collections');
+      const data: Collection[] = await response.json(); // Explicitly typing the data
+
       setCollections(Array.isArray(data) ? data : []);
-  
+
       setSelectedCollections(
         data
           .filter((col: Collection) =>
             col.images.some((img) => img.url === imageUrl)
           )
-          .map((col: Collection) => col.id)  // Explicitly type 'col'
+          .map((col: Collection) => col.id) // Explicitly type 'col'
       );
     } catch {
       toast({
-        title: "Error!",
-        description: "Failed to fetch collections.",
-        variant: "destructive",
+        title: 'Error!',
+        description: 'Failed to fetch collections.',
+        variant: 'destructive',
       });
     }
   }, [imageUrl, toast]);
-  
 
   useEffect(() => {
     fetchCollections();
   }, [fetchCollections]);
 
-  const handleCollectionSelect = async (collectionId: string, checked: boolean) => {
+  const getUpdatedImageUrl = async (): Promise<string> => {
     try {
+      const response = await fetch('/api/verify-image', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ imageUrl }),
+      });
+
+      const data = await response.json();
+      if (data.success && data.url) {
+        return data.url; // The updated Vercel Blob URL
+      } else {
+        throw new Error('Failed to retrieve Blob URL.');
+      }
+    } catch (error) {
+      console.error('Error verifying image:', error);
+      return imageUrl; // Fallback to original URL if something fails
+    }
+  };
+
+  const handleCollectionSelect = async (
+    collectionId: string,
+    checked: boolean
+  ) => {
+    try {
+      const updatedImageUrl = await getUpdatedImageUrl(); // Get the correct URL
+
       const url = checked
         ? `api/collections/${collectionId}/add-image`
         : `api/collections/${collectionId}/remove-image`;
-      const method = checked ? "POST" : "DELETE";
+      const method = checked ? 'POST' : 'DELETE';
 
       const response = await fetch(url, {
         method,
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ imageUrl }),
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ imageUrl: updatedImageUrl }), // Use updated URL
       });
 
       if (response.ok) {
         setSelectedCollections((prev) =>
-          checked ? [...prev, collectionId] : prev.filter((id) => id !== collectionId)
+          checked
+            ? [...prev, collectionId]
+            : prev.filter((id) => id !== collectionId)
         );
 
         toast({
-          title: "Success!",
+          title: 'Success!',
           description: checked
-            ? "Image added to the collection."
-            : "Image removed from the collection.",
+            ? 'Image added to the collection.'
+            : 'Image removed from the collection.',
         });
 
         onCollectionChange?.(); // Notify parent to refresh the favorite state
@@ -85,9 +111,9 @@ const CollectionPopoverContent: React.FC<CollectionPopoverContentProps> = ({
       }
     } catch {
       toast({
-        title: "Error!",
-        description: "Failed to update the collection.",
-        variant: "destructive",
+        title: 'Error!',
+        description: 'Failed to update the collection.',
+        variant: 'destructive',
       });
     }
   };
@@ -96,18 +122,22 @@ const CollectionPopoverContent: React.FC<CollectionPopoverContentProps> = ({
     if (!collectionName.trim()) return;
 
     try {
-      const response = await fetch("/api/collections", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name: collectionName, imageUrl }),
+      const updatedImageUrl = await getUpdatedImageUrl(); // Ensure correct URL before saving
+      const response = await fetch('/api/collections', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: collectionName,
+          imageUrl: updatedImageUrl,
+        }),
       });
 
       if (response.ok) {
-        setCollectionName("");
+        setCollectionName('');
         await fetchCollections();
         toast({
-          title: "Success!",
-          description: "New collection created and image added.",
+          title: 'Success!',
+          description: 'New collection created and image added.',
         });
         onCollectionChange?.();
       } else {
@@ -115,9 +145,9 @@ const CollectionPopoverContent: React.FC<CollectionPopoverContentProps> = ({
       }
     } catch {
       toast({
-        title: "Error!",
-        description: "Failed to create the collection.",
-        variant: "destructive",
+        title: 'Error!',
+        description: 'Failed to create the collection.',
+        variant: 'destructive',
       });
     }
   };
