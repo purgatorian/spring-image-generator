@@ -37,6 +37,22 @@ interface ActiveImage {
   images: { url: string }[];
   index: number;
 }
+const formatMode = (mode: string) => {
+  switch (mode) {
+    case 'text':
+      return 'Text to Image';
+    case 'image':
+      return 'Image to Image';
+    case 'fix':
+      return 'Fix Image';
+    case 'clothing':
+      return 'Generate Clothing';
+    case 'playground':
+      return 'Playground';
+    default:
+      return 'Unknown Mode';
+  }
+};
 
 export default function RequestsPage() {
   const [requests, setRequests] = useState<Request[]>([]);
@@ -44,8 +60,8 @@ export default function RequestsPage() {
   const [actionLoading, setActionLoading] = useState<string | null>(null);
   const [zoomModalOpen, setZoomModalOpen] = useState(false);
   const [activeImage, setActiveImage] = useState<ActiveImage | null>(null);
+  const checkedImages = new Set<string>();
 
-  // 🔹 Filter States
   const [dateRange, setDateRange] = useState<{ from?: Date; to?: Date }>({
     from: undefined,
     to: undefined,
@@ -132,6 +148,41 @@ export default function RequestsPage() {
     }
   };
 
+  const handleBrokenImage = async (
+    taskId: string,
+    mode: string,
+    index: number,
+    updateImage: (newUrls: string[]) => void
+  ) => {
+    console.warn(
+      `🔍 Checking for new image for Task ID: ${taskId} (Only once per page load)...`
+    );
+
+    try {
+      // 🔹 Fetch the latest image URL from the API
+      const response = await fetch(
+        `/api/generate?task_id=${taskId}&apiMode=${mode}`
+      );
+      const data = await response.json();
+
+      if (!response.ok || !data.image_urls || data.image_urls.length === 0) {
+        console.warn(
+          `⚠️ No new image found for Task ID: ${taskId}. Keeping placeholder.`
+        );
+        return;
+      }
+
+      // 🔹 If a new image is found, update only the broken image in the UI
+      console.log(`✅ New image found for Task ID: ${taskId}. Updating UI...`);
+      updateImage(data.image_urls); // Update only this image without refreshing the whole page
+    } catch (error) {
+      console.error(
+        `❌ Error fetching new image for Task ID: ${taskId}`,
+        error
+      );
+    }
+  };
+
   return (
     <div className="px-4 py-4 space-y-4">
       {/* Filters Section */}
@@ -197,11 +248,11 @@ export default function RequestsPage() {
                           {req.status}
                         </Badge>
                       </TableCell>
-                      <TableCell>{req.mode}</TableCell>
+                      <TableCell>{formatMode(req.mode)}</TableCell>
                       <TableCell>
                         {images.length > 0 ? (
                           <div
-                            className="cursor-pointer"
+                            className="flex items-center cursor-pointer"
                             onClick={() => handleImageClick(req.imageUrls, 0)}
                           >
                             <Image
@@ -210,7 +261,38 @@ export default function RequestsPage() {
                               width={50}
                               height={50}
                               className="rounded"
+                              onError={() => {
+                                // Only request once per page load
+                                if (!checkedImages.has(req.taskId)) {
+                                  checkedImages.add(req.taskId);
+                                  handleBrokenImage(
+                                    req.taskId,
+                                    req.mode,
+                                    0,
+                                    (newUrls) =>
+                                      setRequests((prev) =>
+                                        prev.map((item) =>
+                                          item.taskId === req.taskId
+                                            ? {
+                                                ...item,
+                                                imageUrls:
+                                                  JSON.stringify(newUrls),
+                                              }
+                                            : item
+                                        )
+                                      )
+                                  );
+                                } else {
+                                  console.warn(
+                                    `🚫 Skipping duplicate request for Task ID: ${req.taskId}`
+                                  );
+                                }
+                              }}
+                              unoptimized
                             />
+                            {images.length > 1 && (
+                              <span className="ml-2 text-sm text-gray-500">{`+${images.length - 1} more`}</span>
+                            )}
                           </div>
                         ) : (
                           <span className="text-gray-400">No Image</span>
