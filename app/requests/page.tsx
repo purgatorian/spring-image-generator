@@ -1,4 +1,5 @@
 'use client';
+import { DateRange } from 'react-day-picker'; // ✅ Import correct DateRange type
 
 import { useEffect, useState } from 'react';
 import Filters from '@/components/ui/Filters';
@@ -62,10 +63,8 @@ export default function RequestsPage() {
   const [activeImage, setActiveImage] = useState<ActiveImage | null>(null);
   const checkedImages = new Set<string>();
 
-  const [dateRange, setDateRange] = useState<{ from?: Date; to?: Date }>({
-    from: undefined,
-    to: undefined,
-  });
+  const [dateRange, setDateRange] = useState<DateRange | undefined>(undefined);
+
   const [costRange, setCostRange] = useState([0, 1]);
   const [filterStatus, setFilterStatus] = useState('ALL');
   const [filterMode, setFilterMode] = useState('ALL');
@@ -96,8 +95,8 @@ export default function RequestsPage() {
     const createdAt = new Date(req.createdAt);
 
     // Date Range
-    if (dateRange.from && createdAt < dateRange.from) return false;
-    if (dateRange.to && createdAt > dateRange.to) return false;
+    if (dateRange?.from && createdAt < dateRange.from) return false;
+    if (dateRange?.to && createdAt > dateRange.to) return false;
 
     // Cost Range
     if (costFloat < costRange[0] || costFloat > costRange[1]) return false;
@@ -151,7 +150,6 @@ export default function RequestsPage() {
   const handleBrokenImage = async (
     taskId: string,
     mode: string,
-    index: number,
     updateImage: (newUrls: string[]) => void
   ) => {
     console.warn(
@@ -268,7 +266,6 @@ export default function RequestsPage() {
                                   handleBrokenImage(
                                     req.taskId,
                                     req.mode,
-                                    0,
                                     (newUrls) =>
                                       setRequests((prev) =>
                                         prev.map((item) =>
@@ -298,6 +295,7 @@ export default function RequestsPage() {
                           <span className="text-gray-400">No Image</span>
                         )}
                       </TableCell>
+
                       <TableCell>
                         {videos.length > 0 ? (
                           <a

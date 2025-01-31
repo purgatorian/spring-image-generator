@@ -28,6 +28,24 @@ import {
 } from '@/components/ui/collapsible';
 import { CalendarIcon, ChevronDown, ChevronUp } from 'lucide-react';
 
+import { Dispatch, SetStateAction } from 'react';
+import { DateRange } from 'react-day-picker'; // ✅ Import correct DateRange type
+
+interface FiltersProps {
+  filterStatus: string;
+  setFilterStatus: Dispatch<SetStateAction<string>>;
+  filterMode: string;
+  setFilterMode: Dispatch<SetStateAction<string>>;
+  dateRange: DateRange | undefined; // ✅ Use DateRange type
+  setDateRange: Dispatch<SetStateAction<DateRange | undefined>>;
+  costRange: number[];
+  setCostRange: Dispatch<SetStateAction<number[]>>;
+  filterHasImage: boolean;
+  setFilterHasImage: Dispatch<SetStateAction<boolean>>;
+  filterHasVideo: boolean;
+  setFilterHasVideo: Dispatch<SetStateAction<boolean>>;
+}
+
 export default function Filters({
   filterStatus,
   setFilterStatus,
@@ -41,7 +59,7 @@ export default function Filters({
   setFilterHasImage,
   filterHasVideo,
   setFilterHasVideo,
-}) {
+}: FiltersProps) {
   const [isOpen, setIsOpen] = useState(false); // Collapsible state
 
   return (
@@ -69,7 +87,7 @@ export default function Filters({
                     variant="outline"
                     className="w-full flex items-center justify-between"
                   >
-                    {dateRange.from && dateRange.to
+                    {dateRange?.from && dateRange?.to
                       ? `${format(dateRange.from, 'PP')} - ${format(dateRange.to, 'PP')}`
                       : 'Select Date Range'}
                     <CalendarIcon className="ml-2 w-4 h-4" />
@@ -78,10 +96,10 @@ export default function Filters({
                 <PopoverContent className="w-auto">
                   <Calendar
                     mode="range"
-                    selected={dateRange}
+                    selected={dateRange ?? undefined} // ✅ Ensure proper type handling
                     onSelect={(range) =>
                       setDateRange(range || { from: undefined, to: undefined })
-                    }
+                    } // ✅ Provide fallback
                     numberOfMonths={2}
                   />
                 </PopoverContent>
