@@ -2,12 +2,13 @@
 
 import { useState } from 'react';
 import { format } from 'date-fns';
+import { DayPicker } from 'react-day-picker';
+import 'react-day-picker/dist/style.css';
 import {
   Popover,
   PopoverTrigger,
   PopoverContent,
 } from '@/components/ui/popover';
-import { Calendar } from '@/components/ui/calendar';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -29,14 +30,14 @@ import {
 import { CalendarIcon, ChevronDown, ChevronUp } from 'lucide-react';
 
 import { Dispatch, SetStateAction } from 'react';
-import { DateRange } from 'react-day-picker'; // ✅ Import correct DateRange type
+import { DateRange } from 'react-day-picker'; // ✅ Import DateRange from react-day-picker
 
 interface FiltersProps {
   filterStatus: string;
   setFilterStatus: Dispatch<SetStateAction<string>>;
   filterMode: string;
   setFilterMode: Dispatch<SetStateAction<string>>;
-  dateRange: DateRange | undefined; // ✅ Use DateRange type
+  dateRange: DateRange | undefined;
   setDateRange: Dispatch<SetStateAction<DateRange | undefined>>;
   costRange: number[];
   setCostRange: Dispatch<SetStateAction<number[]>>;
@@ -60,7 +61,7 @@ export default function Filters({
   filterHasVideo,
   setFilterHasVideo,
 }: FiltersProps) {
-  const [isOpen, setIsOpen] = useState(false); // Collapsible state
+  const [isOpen, setIsOpen] = useState(false);
 
   return (
     <Card>
@@ -94,14 +95,10 @@ export default function Filters({
                   </Button>
                 </PopoverTrigger>
                 <PopoverContent className="w-auto">
-                  <Calendar
+                  <DayPicker
                     mode="range"
-                    selected={dateRange ?? undefined} // ✅ Ensure proper type handling
-                    onSelect={(
-                      range: DateRange | undefined // ✅ Explicitly define type
-                    ) =>
-                      setDateRange(range || { from: undefined, to: undefined })
-                    }
+                    selected={dateRange}
+                    onSelect={setDateRange}
                     numberOfMonths={2}
                   />
                 </PopoverContent>
