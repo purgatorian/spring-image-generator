@@ -1,4 +1,4 @@
-"use client";
+'use client';
 
 import {
   ClerkProvider,
@@ -7,31 +7,49 @@ import {
   SignedIn,
   SignedOut,
   UserButton,
-} from "@clerk/nextjs";
-import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
-import { AppSidebar } from "@/components/app-sidebar";
+} from '@clerk/nextjs';
+import { SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar';
+import { AppSidebar } from '@/components/app-sidebar';
 import { dark } from '@clerk/themes';
 import { ThemeProvider } from 'next-themes';
-import { useState } from "react";
+import { useState } from 'react';
 
 interface ClientLayoutProps {
   children: React.ReactNode;
   defaultOpen: boolean | undefined;
 }
 
-export default function ClientLayout({ children, defaultOpen }: ClientLayoutProps) {
+export default function ClientLayout({
+  children,
+  defaultOpen,
+}: ClientLayoutProps) {
   const [showSignUp, setShowSignUp] = useState(false); // Toggle between SignIn and SignUp
 
   return (
     <ClerkProvider appearance={{ baseTheme: dark }}>
-      <ThemeProvider attribute="class" defaultTheme="system" storageKey="theme" enableSystem disableTransitionOnChange>
+      <ThemeProvider
+        attribute="class"
+        defaultTheme="system"
+        storageKey="theme"
+        enableSystem
+        disableTransitionOnChange
+      >
         {/* Show Sign In or Sign Up when the user is signed out */}
         <SignedOut>
-          <main style={{ height: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', width: '100vw' }}>
+          <main
+            style={{
+              height: '100vh',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              flexDirection: 'column',
+              width: '100vw',
+            }}
+          >
             {showSignUp ? (
-              <SignUp routing="virtual" afterSignInUrl="/" afterSignUpUrl="/" />
+              <SignUp routing="path" afterSignInUrl="/" afterSignUpUrl="/" />
             ) : (
-              <SignIn routing="virtual" afterSignInUrl="/" />
+              <SignIn routing="path" afterSignInUrl="/" />
             )}
 
             {/* Toggle between Sign In and Sign Up */}
@@ -44,7 +62,9 @@ export default function ClientLayout({ children, defaultOpen }: ClientLayoutProp
                 cursor: 'pointer',
               }}
             >
-              {showSignUp ? "Already have an account? Sign In" : "Don't have an account? Sign Up"}
+              {showSignUp
+                ? 'Already have an account? Sign In'
+                : "Don't have an account? Sign Up"}
             </button>
           </main>
 
@@ -54,7 +74,9 @@ export default function ClientLayout({ children, defaultOpen }: ClientLayoutProp
               pointer-events: none;
               overflow: hidden;
             }
-            main, button, div {
+            main,
+            button,
+            div {
               pointer-events: all;
             }
           `}</style>
