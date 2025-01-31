@@ -1,18 +1,30 @@
-//app/requests/page.tsx
-"use client";
+'use client';
 
-import { useEffect, useState } from "react";
-import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
-import { Table, TableHead, TableHeader, TableRow, TableBody, TableCell } from "@/components/ui/table";
-import { Badge } from "@/components/ui/badge";
-import Image from "next/image";
-import ZoomModal from "@/components/ZoomModal";
-import { Loader2, MoreHorizontal, RefreshCcw } from "lucide-react";
-import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from "@/components/ui/dropdown-menu";
+import { useEffect, useState } from 'react';
+import Filters from '@/components/ui/Filters';
+import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
+import {
+  Table,
+  TableHead,
+  TableHeader,
+  TableRow,
+  TableBody,
+  TableCell,
+} from '@/components/ui/table';
+import { Badge } from '@/components/ui/badge';
+import Image from 'next/image';
+import ZoomModal from '@/components/ZoomModal';
+import { Loader2, MoreHorizontal, RefreshCcw } from 'lucide-react';
+import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuItem,
+} from '@/components/ui/dropdown-menu';
 
 interface Request {
   id: string;
-  taskId: string;  // ✅ Added taskId to the interface
+  taskId: string;
   createdAt: string;
   cost: number;
   status: string;
@@ -21,10 +33,9 @@ interface Request {
   mode: string;
 }
 
-// Define the type for activeImage state
 interface ActiveImage {
-  images: { url: string }[]; // Array of image objects with a `url` property
-  index: number;            // The current index of the image being viewed
+  images: { url: string }[];
+  index: number;
 }
 
 export default function RequestsPage() {
@@ -32,9 +43,20 @@ export default function RequestsPage() {
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
   const [zoomModalOpen, setZoomModalOpen] = useState(false);
-  const [activeImage, setActiveImage] = useState<ActiveImage | null>(null); // Update the state type
-  const formatCost = (cost: number) => `$${(cost / 1000000).toFixed(6)}`;
+  const [activeImage, setActiveImage] = useState<ActiveImage | null>(null);
 
+  // 🔹 Filter States
+  const [dateRange, setDateRange] = useState<{ from?: Date; to?: Date }>({
+    from: undefined,
+    to: undefined,
+  });
+  const [costRange, setCostRange] = useState([0, 1]);
+  const [filterStatus, setFilterStatus] = useState('ALL');
+  const [filterMode, setFilterMode] = useState('ALL');
+  const [filterHasImage, setFilterHasImage] = useState(false);
+  const [filterHasVideo, setFilterHasVideo] = useState(false);
+
+  // 🔹 Fetch Data
   useEffect(() => {
     fetchRequests();
   }, []);
@@ -42,77 +64,102 @@ export default function RequestsPage() {
   const fetchRequests = async () => {
     setLoading(true);
     try {
-      const response = await fetch("/api/get-requests");
+      const response = await fetch('/api/get-requests');
       const data = await response.json();
       setRequests(data);
     } catch (error) {
-      console.error("Error fetching requests:", error);
+      console.error('Error fetching requests:', error);
     } finally {
       setLoading(false);
     }
   };
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case "COMPLETED":
-        return "bg-green-100 text-green-800";
-      case "IN_PROGRESS":
-        return "bg-yellow-100 text-yellow-800";
-      case "FAILED":
-        return "bg-red-100 text-red-800";
-      default:
-        return "bg-gray-100 text-gray-800";
-    }
-  };
+  // 🔹 Filtering Logic
+  const filteredRequests = requests.filter((req) => {
+    const costFloat = req.cost / 1000000;
+    const createdAt = new Date(req.createdAt);
 
-  const formatMode = (mode: string) => {
-    switch (mode) {
-      case "text":
-        return "Text to Image";
-      case "image":
-        return "Image to Image";
-      case "clothing":
-        return "Clothing";
-      case "model":
-        return "Model";
-      default:
-        return "Unknown";
-    }
-  };
+    // Date Range
+    if (dateRange.from && createdAt < dateRange.from) return false;
+    if (dateRange.to && createdAt > dateRange.to) return false;
 
+    // Cost Range
+    if (costFloat < costRange[0] || costFloat > costRange[1]) return false;
+
+    // Status & Mode
+    if (filterStatus !== 'ALL' && req.status !== filterStatus) return false;
+    if (filterMode !== 'ALL' && req.mode !== filterMode) return false;
+
+    // Image & Video Existence
+    const images = JSON.parse(req.imageUrls || '[]');
+    if (filterHasImage && images.length === 0) return false;
+
+    const videos = JSON.parse(req.videoUrls || '[]');
+    if (filterHasVideo && videos.length === 0) return false;
+
+    return true;
+  });
+
+  // 🔹 Handle Image Click for ZoomModal
   const handleImageClick = (imageUrls: string, index: number) => {
-    const images = JSON.parse(imageUrls || "[]").map((url: string) => ({ url })); // Parse the image URLs
-    setActiveImage({ images, index }); // Update the state with images and index
-    setZoomModalOpen(true);            // Open the modal
+    const images = JSON.parse(imageUrls || '[]').map((url: string) => ({
+      url,
+    }));
+
+    if (images.length > 0) {
+      setActiveImage({ images, index });
+      setZoomModalOpen(true);
+    }
   };
 
+  // 🔹 Handle Refresh Action
   const handleUpdate = async (taskId: string, mode: string) => {
-    setActionLoading(taskId);
+    setActionLoading(taskId); // Show loading for this task
     try {
-      const response = await fetch(`/api/generate?task_id=${taskId}&apiMode=${mode}`);
-      
+      const response = await fetch(
+        `/api/generate?task_id=${taskId}&apiMode=${mode}`
+      );
+
       if (!response.ok) {
-        throw new Error("Failed to refresh data.");
+        throw new Error('Failed to refresh data.');
       }
 
-      await fetchRequests();  // Refresh UI
+      await fetchRequests(); // Refresh UI
     } catch (error) {
-      console.error("Error updating request:", error);
+      console.error('Error updating request:', error);
     } finally {
-      setActionLoading(null);
+      setActionLoading(null); // Hide loading
     }
   };
 
   return (
-    <div className="ml-4 p-4">
+    <div className="px-4 py-4 space-y-4">
+      {/* Filters Section */}
+      <Filters
+        filterStatus={filterStatus}
+        setFilterStatus={setFilterStatus}
+        filterMode={filterMode}
+        setFilterMode={setFilterMode}
+        dateRange={dateRange}
+        setDateRange={setDateRange}
+        costRange={costRange}
+        setCostRange={setCostRange}
+        filterHasImage={filterHasImage}
+        setFilterHasImage={setFilterHasImage}
+        filterHasVideo={filterHasVideo}
+        setFilterHasVideo={setFilterHasVideo}
+      />
+
+      {/* Requests Table */}
       <Card>
         <CardHeader>
           <CardTitle>Your Requests</CardTitle>
         </CardHeader>
         <CardContent>
           {loading ? (
-            <div className="text-center py-6 flex items-center justify-center">
-              <Loader2 className="animate-spin w-6 h-6" /> Loading Requests...
+            <div className="flex items-center justify-center py-6">
+              <Loader2 className="animate-spin w-6 h-6 mr-2" />
+              Loading Requests...
             </div>
           ) : (
             <Table>
@@ -128,44 +175,47 @@ export default function RequestsPage() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {requests.map((req) => {
-                  const images = JSON.parse(req.imageUrls || "[]");
-                  const videos = JSON.parse(req.videoUrls || "[]");
+                {filteredRequests.map((req) => {
+                  const images = JSON.parse(req.imageUrls || '[]');
+                  const videos = JSON.parse(req.videoUrls || '[]');
                   return (
                     <TableRow key={req.id}>
-                      <TableCell>{new Date(req.createdAt).toLocaleString()}</TableCell>
-                      <TableCell>{formatCost(req.cost)}</TableCell>
                       <TableCell>
-                        <Badge className={getStatusColor(req.status)}>{req.status}</Badge>
+                        {new Date(req.createdAt).toLocaleString()}
                       </TableCell>
-                      <TableCell>{formatMode(req.mode)}</TableCell>
+                      <TableCell>${(req.cost / 1000000).toFixed(6)}</TableCell>
+                      <TableCell>
+                        <Badge
+                          className={
+                            req.status === 'COMPLETED'
+                              ? 'bg-green-100 text-green-800'
+                              : req.status === 'IN_PROGRESS'
+                                ? 'bg-yellow-100 text-yellow-800'
+                                : 'bg-red-100 text-red-800'
+                          }
+                        >
+                          {req.status}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>{req.mode}</TableCell>
                       <TableCell>
                         {images.length > 0 ? (
                           <div
-                            className="flex items-center cursor-pointer"
-                            onClick={() => handleImageClick(req.imageUrls, 0)} // Pass the raw imageUrls and start index
+                            className="cursor-pointer"
+                            onClick={() => handleImageClick(req.imageUrls, 0)}
                           >
                             <Image
-                              src={images[0]} // Display the first image as a preview
+                              src={images[0]}
                               alt="Generated Image"
                               width={50}
                               height={50}
                               className="rounded"
-                              onError={(e) => {
-                                const target = e.target as HTMLImageElement;
-                                target.src = "/no-image.jpg"; // Fallback to default image
-                              }}
-                              unoptimized
                             />
-                            {images.length > 1 && (
-                              <span className="ml-2 text-sm text-gray-500">{`+${images.length - 1} more`}</span>
-                            )}
                           </div>
                         ) : (
-                          "No Image"
+                          <span className="text-gray-400">No Image</span>
                         )}
                       </TableCell>
-
                       <TableCell>
                         {videos.length > 0 ? (
                           <a
@@ -176,7 +226,9 @@ export default function RequestsPage() {
                           >
                             View Video
                           </a>
-                        ) : "No Video"}
+                        ) : (
+                          <span className="text-gray-400">No Video</span>
+                        )}
                       </TableCell>
                       <TableCell>
                         <DropdownMenu>
@@ -190,7 +242,9 @@ export default function RequestsPage() {
                             </button>
                           </DropdownMenuTrigger>
                           <DropdownMenuContent>
-                            <DropdownMenuItem onClick={() => handleUpdate(req.taskId, req.mode)}>
+                            <DropdownMenuItem
+                              onClick={() => handleUpdate(req.taskId, req.mode)}
+                            >
                               <RefreshCcw className="w-4 h-4 mr-2" /> Refresh
                             </DropdownMenuItem>
                           </DropdownMenuContent>
@@ -204,10 +258,11 @@ export default function RequestsPage() {
           )}
         </CardContent>
       </Card>
+
       {zoomModalOpen && activeImage && (
         <ZoomModal
-          images={activeImage.images} // Parsed images
-          currentIndex={activeImage.index} // Start index
+          images={activeImage.images}
+          currentIndex={activeImage.index}
           onClose={() => setZoomModalOpen(false)}
         />
       )}
