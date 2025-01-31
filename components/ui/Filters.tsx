@@ -97,9 +97,11 @@ export default function Filters({
                   <Calendar
                     mode="range"
                     selected={dateRange ?? undefined} // ✅ Ensure proper type handling
-                    onSelect={(range) =>
+                    onSelect={(
+                      range: DateRange | undefined // ✅ Explicitly define type
+                    ) =>
                       setDateRange(range || { from: undefined, to: undefined })
-                    } // ✅ Provide fallback
+                    }
                     numberOfMonths={2}
                   />
                 </PopoverContent>
