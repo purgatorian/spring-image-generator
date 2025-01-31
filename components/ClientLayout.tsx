@@ -47,9 +47,9 @@ export default function ClientLayout({
             }}
           >
             {showSignUp ? (
-              <SignUp routing="path" afterSignInUrl="/" afterSignUpUrl="/" />
+              <SignUp routing="hash" afterSignInUrl="/" afterSignUpUrl="/" />
             ) : (
-              <SignIn routing="path" afterSignInUrl="/" />
+              <SignIn routing="hash" afterSignInUrl="/" />
             )}
 
             {/* Toggle between Sign In and Sign Up */}
