@@ -44,10 +44,12 @@ const formatMode = (mode: string) => {
       return 'Text to Image';
     case 'image':
       return 'Image to Image';
-    case 'fix':
-      return 'Fix Image';
     case 'clothing':
       return 'Generate Clothing';
+    case 'fix':
+      return 'Fix Image';
+    case 'upscale':
+      return 'Upscale';
     case 'playground':
       return 'Playground';
     default:
