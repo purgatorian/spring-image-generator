@@ -6,7 +6,6 @@ import {
   SignUp,
   SignedIn,
   SignedOut,
-  UserButton,
 } from '@clerk/nextjs';
 import { SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar';
 import { AppSidebar } from '@/components/app-sidebar';
@@ -91,7 +90,6 @@ export default function ClientLayout({
               {children}
             </main>
           </SidebarProvider>
-          <UserButton />
         </SignedIn>
       </ThemeProvider>
     </ClerkProvider>

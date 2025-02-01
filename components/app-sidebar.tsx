@@ -121,7 +121,7 @@ export function AppSidebar({}) {
                       <SidebarMenuButton asChild>
                         <Link href={item.href}>
                           <div
-                            className={`flex items-center gap-2 px-2 py-1 rounded`}
+                            className={`flex items-center gap-2 py-1 rounded`}
                           >
                             <item.icon className="w-5 h-5" />
                             {state !== 'collapsed' && <span>{item.title}</span>}
@@ -156,7 +156,7 @@ export function AppSidebar({}) {
                       <SidebarMenuButton asChild>
                         <Link href={item.href}>
                           <div
-                            className={`flex items-center gap-2 px-2 py-1 rounded`}
+                            className={`flex items-center gap-2 py-1 rounded`}
                           >
                             <item.icon className="w-5 h-5" />
                             {state !== 'collapsed' && <span>{item.title}</span>}

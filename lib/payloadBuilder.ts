@@ -112,3 +112,49 @@ export function buildClothingModePayload(
     },
   };
 }
+
+// 📦 **Upscale Image Payload**
+export function buildUpscaleImagePayload(
+  imageUrl: string,
+  scaleFactor: number = 4
+) {
+  return {
+    inputs: {
+      '08cc7cda37f7e786': {
+        title: 'InstaSD API Input - Integer',
+        value: scaleFactor, // ✅ Default scale factor is 4
+      },
+      '28d78969bc37c3b8': {
+        title: 'InstaSD API Input - Seed',
+        value: generateRandomSeed(), // ✅ Generate a random seed
+      },
+      e0f525563450fc92: {
+        title: 'Load Image',
+        value: imageUrl, // ✅ Publicly available image URL
+      },
+    },
+  };
+}
+
+// 📦 **Fix Image Payload**
+export function buildFixImagePayload(
+  blankImageUrl: string,
+  garmentImageUrl: string
+) {
+  return {
+    inputs: {
+      a94c23b066e2aa6f: {
+        title: 'InstaSD API Input - Seed',
+        value: generateRandomSeed(),
+      },
+      '8e11a247ea511f44': {
+        title: 'Blank Image',
+        value: blankImageUrl,
+      },
+      a29806682a0181f0: {
+        title: 'Load Garment Image',
+        value: garmentImageUrl,
+      },
+    },
+  };
+}
