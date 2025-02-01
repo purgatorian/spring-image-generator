@@ -1,4 +1,3 @@
-// useTaskProcessor.ts
 import { useState, useEffect } from 'react';
 
 interface TaskResult {
@@ -6,6 +5,7 @@ interface TaskResult {
   progress: number;
   status: string;
   isGenerating: boolean;
+  error: string | null; // ✅ Added error state
   startTask: <T>(apiMode: string, payload: T) => void;
 }
 
@@ -16,12 +16,14 @@ export const useTaskProcessor = (): TaskResult => {
   const [progress, setProgress] = useState(0);
   const [generatedImages, setGeneratedImages] = useState<string[]>([]);
   const [isGenerating, setIsGenerating] = useState(false);
+  const [error, setError] = useState<string | null>(null); // ✅ Added error state
 
   // Polling API to check the status
   useEffect(() => {
     if (!taskId || !apiMode) return;
 
     setIsGenerating(true);
+    setError(null); // Reset error on new task
 
     const interval = setInterval(async () => {
       try {
@@ -35,6 +37,7 @@ export const useTaskProcessor = (): TaskResult => {
         if (data.status === 'failed') {
           setStatus('Generation failed');
           setIsGenerating(false);
+          setError('Generation failed. Please try again.'); // ✅ Set error message
           clearInterval(interval);
           return;
         }
@@ -43,7 +46,7 @@ export const useTaskProcessor = (): TaskResult => {
           data.status === 'IN_QUEUE'
             ? 'Queued for processing'
             : data.status === 'EXECUTING'
-              ? 'Generating images...' // Updated wording
+              ? 'Generating images...'
               : data.status || 'Processing...'
         );
         setProgress(data.progress || 0);
@@ -56,6 +59,7 @@ export const useTaskProcessor = (): TaskResult => {
       } catch (error) {
         console.error('Error fetching task status:', error);
         setIsGenerating(false);
+        setError('Error fetching task status. Please try again.'); // ✅ Set error message
       }
     }, 5000);
 
@@ -69,6 +73,7 @@ export const useTaskProcessor = (): TaskResult => {
     setProgress(0);
     setGeneratedImages([]);
     setIsGenerating(true);
+    setError(null); // ✅ Reset error on new task
 
     try {
       const res = await fetch('/api/generate', {
@@ -88,8 +93,11 @@ export const useTaskProcessor = (): TaskResult => {
       console.error('Error queuing task:', error);
       setStatus('Error starting generation');
       setIsGenerating(false);
+      setError(
+        'Error starting generation. Please check your input and try again.'
+      ); // ✅ Set error message
     }
   };
 
-  return { generatedImages, progress, status, isGenerating, startTask };
+  return { generatedImages, progress, status, isGenerating, error, startTask };
 };

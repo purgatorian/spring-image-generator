@@ -20,7 +20,7 @@ import {
 } from '@/lib/payloadBuilder';
 
 export default function FixImagePage() {
-  const [selectedUpscale, setSelectedUpscale] = useState<number>(2); // ✅ Default to 2x
+  const [selectedUpscale, setSelectedUpscale] = useState<string>('2'); // Store as string
   const [upscaleImage, setUpscaleImage] = useState<string | null>(null);
   const [fixImage, setFixImage] = useState<string | null>(null);
   const blankImage =
@@ -30,7 +30,8 @@ export default function FixImagePage() {
 
   const handleUpscale = () => {
     if (!selectedUpscale || !upscaleImage) return;
-    const payload = buildUpscaleImagePayload(upscaleImage, selectedUpscale);
+    const upscaleFactor = parseInt(selectedUpscale, 10); // ✅ Convert back to number
+    const payload = buildUpscaleImagePayload(upscaleImage, upscaleFactor);
     startTask('upscale', payload);
   };
 
@@ -66,10 +67,10 @@ export default function FixImagePage() {
                 <ToggleGroup
                   type="single"
                   value={selectedUpscale}
-                  onValueChange={setSelectedUpscale}
+                  onValueChange={(value) => setSelectedUpscale(value)}
                 >
                   {[2, 4, 5].map((factor) => (
-                    <ToggleGroupItem key={factor} value={factor}>
+                    <ToggleGroupItem key={factor} value={factor.toString()}>
                       {factor}x
                     </ToggleGroupItem>
                   ))}
