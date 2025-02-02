@@ -21,6 +21,8 @@ export async function POST(req: NextRequest) {
     // Look up the correct endpoint + token
     const { endpoint, authToken } =
       instaSDConfig[apiMode as keyof typeof instaSDConfig] || {};
+    console.log(endpoint, authToken);
+
     if (!endpoint || !payload) {
       console.error('❌ Missing endpoint or payload:', { endpoint, payload });
       return NextResponse.json(
