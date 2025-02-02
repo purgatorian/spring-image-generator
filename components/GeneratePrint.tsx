@@ -33,6 +33,7 @@ import {
 export const GeneratePrint = () => {
   const [mode, setMode] = useState<'text' | 'image'>('text');
   const [prompt, setPrompt] = useState('');
+  const [isFetchingDescription, setIsFetchingDescription] = useState(false);
   const [negativePrompt, setNegativePrompt] = useState(
     'Low-quality details, blurry textures, pixelated patterns, distorted shapes, overexposed colors, harsh gradients, excessive noise, artifacts, unintended objects, incomplete designs, asymmetry in patterns (unless intentional), clashing colors, low contrast, uneven spacing, unrealistic elements, unrelated background objects, unwanted shadows, misaligned repetitions, overcomplicated designs, poor composition, random text, logos, watermarks, or borders.'
   );
@@ -74,6 +75,7 @@ export const GeneratePrint = () => {
     async (imageUrl: string) => {
       if (!prompt) {
         try {
+          setIsFetchingDescription(true);
           toast({
             title: 'Fetching description...',
             description: 'Analyzing image...',
@@ -88,6 +90,8 @@ export const GeneratePrint = () => {
           if (!response.ok) throw new Error('Failed to fetch description');
           const { description } = await response.json();
           setPrompt(description);
+          setIsFetchingDescription(false);
+
           toast({
             title: 'Success',
             description: 'Description fetched successfully!',
@@ -204,7 +208,10 @@ export const GeneratePrint = () => {
           ) : (
             <ImageUploadSection
               onUploadComplete={setUploadedImageUrl}
-              onRemoveImage={() => setUploadedImageUrl(null)}
+              onRemoveImage={() => {
+                setUploadedImageUrl(null);
+                setPrompt(''); // Clear the positive prompt when an image is removed
+              }}
             />
           )}
 
@@ -298,7 +305,10 @@ export const GeneratePrint = () => {
           </Popover>
 
           {/* Generate Button */}
-          <Button onClick={handleGenerate} disabled={isGenerating}>
+          <Button
+            onClick={handleGenerate}
+            disabled={isGenerating || isFetchingDescription}
+          >
             {isGenerating ? 'Generating...' : 'Generate'}
           </Button>
         </CardContent>

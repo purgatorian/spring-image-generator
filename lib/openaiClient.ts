@@ -1,4 +1,4 @@
-import OpenAI from "openai";
+import OpenAI from 'openai';
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY, // Ensure your API key is set in the .env file
@@ -44,22 +44,35 @@ Analyze the print design on the garment visible in the provided image and provid
 Provide the description in a structured and detailed format for accurate reproduction using AI tools like Stable Diffusion.
 `;
 
-const systemPrompt = "You are a highly skilled AI specializing in analyzing garment prints and providing comprehensive descriptions to enable accurate digital reproduction. Your task is to focus on the visual details of the print, including colors, patterns, textures, styles, and arrangements, while ignoring unrelated garment features such as fabric type or garment fit."
+const systemPrompt = `
+You are a highly specialized AI focusing solely on analyzing and describing garment prints for digital reproduction. 
+Your task is to provide a structured, comprehensive description of the **print design only**, without referencing humans, animals, or unrelated garment features such as fabric type, garment fit, or external objects. 
 
-export async function fetchOpenAIDescription(imageUrl: string): Promise<string> {
+Strictly follow these guidelines:
+- **Describe only the print** and its artistic elements (e.g., colors, patterns, textures, artistic style, and arrangements).
+- **Never mention** real-world objects unrelated to the design unless they are abstract elements within the print.
+- **Ensure clarity for digital artists or AI tools** by detailing essential attributes needed for accurate replication.
+- **If the image contains non-print elements, ignore them completely** and focus solely on the **pattern or artwork** used on the garment.
+
+Your response should always assume that the goal is to **generate or replicate a print design**, ensuring all descriptions are structured and free from distractions.
+`;
+
+export async function fetchOpenAIDescription(
+  imageUrl: string
+): Promise<string> {
   try {
     const response = await openai.chat.completions.create({
-      model: "gpt-4o", // Vision-capable model
+      model: 'gpt-4o', // Vision-capable model
       messages: [
         {
-          role: "system",
+          role: 'system',
           content: systemPrompt,
         },
         {
-          role: "user",
+          role: 'user',
           content: [
-            { type: "text", text: prompt },
-            { type: "image_url", image_url: { url: imageUrl } },
+            { type: 'text', text: prompt },
+            { type: 'image_url', image_url: { url: imageUrl } },
           ],
         },
       ],
@@ -67,15 +80,14 @@ export async function fetchOpenAIDescription(imageUrl: string): Promise<string> 
 
     const description = response.choices[0]?.message?.content?.trim();
     if (!description) {
-      throw new Error("No description returned from OpenAI");
+      throw new Error('No description returned from OpenAI');
     }
 
     return description;
   } catch (error) {
-    console.error("Error communicating with OpenAI:", error);
-    throw new Error("Failed to fetch description from OpenAI");
+    console.error('Error communicating with OpenAI:', error);
+    throw new Error('Failed to fetch description from OpenAI');
   }
 }
 
 export { openai };
-
