@@ -90,6 +90,8 @@ export const GeneratePrint = () => {
           if (!response.ok) throw new Error('Failed to fetch description');
           const { description } = await response.json();
           setPrompt(description);
+          console.log(description);
+
           setIsFetchingDescription(false);
 
           toast({
