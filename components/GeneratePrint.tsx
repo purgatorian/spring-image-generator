@@ -36,7 +36,7 @@ export const GeneratePrint = () => {
   const [parameters, setParameters] = useState({
     resolution: '1024x1024',
     batchSize: 1,
-    tiling: true,
+    tiling: false,
     resolutionLocked: true,
   });
 
@@ -44,6 +44,14 @@ export const GeneratePrint = () => {
   const { generatedImages, progress, status, isGenerating, startTask } =
     useTaskProcessor();
 
+  const examplePrompts = [
+    'A mesmerizing deep midnight blue sky, scattered with countless shimmering stars, glowing nebula clouds, and a subtle gradient of twilight hues. The design has a dreamy and cosmic aesthetic, perfect for elegant and celestial-themed clothing prints, ultra high-definition, intricate details, seamless tiling, high contrast, no noise, no artifacts.',
+    'A vibrant and lively summer-themed pattern with tropical palm leaves, radiant sunrays, colorful exotic flowers, and a clear blue ocean backdrop. The design is dynamic, full of warmth and positive energy, perfect for beachwear or summer clothing prints. Ultra high-resolution, vivid color contrast, seamless tiling, sharp details, no artifacts.',
+    'An elegant and artistic floral pattern featuring hand-painted watercolor roses, peonies, and delicate wildflowers. Soft pastel hues blend into a dreamy, aesthetic composition with smooth brush strokes and naturalistic gradients. Designed for a stylish and timeless clothing print, ultra high-definition, seamless pattern, rich details, no artifacts, no harsh shadows.',
+  ];
+  const handleExampleClick = (example: string) => {
+    setPrompt(example);
+  };
   // Fetch print description for uploaded image
   const fetchPrintDescription = useCallback(
     async (imageUrl: string) => {
@@ -138,18 +146,39 @@ export const GeneratePrint = () => {
           {/* Input Section */}
           {mode === 'text' ? (
             <>
-              <Textarea
-                placeholder="Describe in detail..."
-                rows={4}
-                value={prompt}
-                onChange={(e) => setPrompt(e.target.value)}
-              />
-              <Textarea
-                placeholder="Negative prompts (optional)..."
-                rows={3}
-                value={negativePrompt}
-                onChange={(e) => setNegativePrompt(e.target.value)}
-              />
+              {/* Positive Prompt Section */}
+              <div className="space-y-3 p-4 border rounded-lg">
+                <p className="text-lg font-semibold">Positive Prompt</p>
+                <div className="flex space-x-2">
+                  {examplePrompts.map((example, index) => (
+                    <Button
+                      key={index}
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleExampleClick(example)}
+                    >
+                      {index + 1}
+                    </Button>
+                  ))}
+                </div>
+                <Textarea
+                  placeholder="Describe in detail..."
+                  rows={5}
+                  value={prompt}
+                  onChange={(e) => setPrompt(e.target.value)}
+                />
+              </div>
+
+              {/* Negative Prompt Section */}
+              <div className="space-y-3 p-4 border rounded-lg">
+                <p className="text-lg font-semibold">Negative Prompt</p>
+                <Textarea
+                  placeholder="Negative prompts (optional)..."
+                  rows={5}
+                  value={negativePrompt}
+                  onChange={(e) => setNegativePrompt(e.target.value)}
+                />
+              </div>
             </>
           ) : (
             <ImageUploadSection
